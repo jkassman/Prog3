@@ -43,6 +43,86 @@ int stringToInt(int *destInt,char *toConvert, int minVal, int maxVal)
     return 0;
 }
 
+void sendOpCode(const char *opcode, int sock)
+{
+    //Send opcode to the server
+    int status;
+    status = send(sock, opcode, strlen(opcode) + 1, 0);
+    if (status < 0)
+    {
+        fprintf(stderr, "myftp error sending opcode: %s\n", strerror(errno));
+        close(sock);
+        exit(3);
+    }
+}
+
+int clientRequest(int sock)
+{
+    sendOpCode("REQ", sock);
+    //Receive Message from the server
+    char recvBuffy[PROG3_BUFFER_SIZE];
+    int bytesRecvd;
+    bytesRecvd = recv(sock, recvBuffy, sizeof(recvBuffy), 0);
+    if (bytesRecvd < 0)
+    {
+        fprintf(stderr, "myftp Error: recv(): %s\n", strerror(errno));
+        close(sock);
+        exit(3);
+    }
+
+    //print out raw bytes received
+    printf("Got %d bytes\n", bytesRecvd);
+    int i;
+    for (i = 0; i < bytesRecvd; i++)
+    {
+        printf("%c", recvBuffy[i]);
+    }
+    puts("");
+    return 0;
+}
+
+int clientUpload(int sock)
+{
+    sendOpCode("UPL", sock);
+    return 0;
+}
+
+int clientDelete(int sock)
+{
+    sendOpCode("DEL", sock);
+    return 0;
+}
+
+int clientList(int sock)
+{
+    sendOpCode("LIS", sock);
+    return 0;
+}
+
+int clientMkdir(int sock)
+{
+    sendOpCode("MKD", sock);
+    return 0;
+}
+
+int clientRmdir(int sock)
+{
+    sendOpCode("RMD", sock);
+    return 0;
+}
+
+int clientCd(int sock)
+{
+    sendOpCode("CHD", sock);
+    return 0;
+}
+
+void clientExit(int sock)
+{
+    sendOpCode("XIT", sock);
+    printf("The session has been closed\n");
+}
+ 
 int main(int argc, char **argv)
 {
     int status;
@@ -100,7 +180,8 @@ int main(int argc, char **argv)
     sinbad.sin_family = AF_INET;
     bcopy(serverIp->h_addr, (char *) &sinbad.sin_addr, serverIp->h_length);
     sinbad.sin_port = htons(portNumber);
-    
+
+
     //connect to the TCP Server
     status = connect(sock, (struct sockaddr*) &sinbad, sizeof(sinbad));
     if (status < 0)
@@ -108,37 +189,54 @@ int main(int argc, char **argv)
         fprintf(stderr, "myftp Error: connect(): %s\n", strerror(errno));
         close(sock);
         exit(2);
+    }   
+
+    //Get input from user
+    char operation[16];
+    int loopExit = 0;
+    while (!loopExit)
+    {
+        fgets(operation, 16, stdin);
+        //Decide which operation to do
+        if (!strcmp(operation, "REQ\n"))
+        {
+            clientRequest(sock);
+        }
+        else if (!strcmp(operation, "UPL\n"))
+        {
+            clientUpload(sock);
+        }
+        else if (!strcmp(operation, "DEL\n"))
+        {
+            clientDelete(sock);
+        }
+        else if (!strcmp(operation, "LIS\n"))
+        {
+            clientList(sock);
+        }
+        else if (!strcmp(operation, "MKD\n"))
+        {
+            clientMkdir(sock);
+        }
+        else if (!strcmp(operation, "RMD\n"))
+        {
+            clientRmdir(sock);
+        }
+        else if (!strcmp(operation, "CHD\n"))
+        {
+            clientCd(sock);
+        }
+        else if (!strcmp(operation, "XIT\n"))
+        {
+            clientExit(sock);
+            loopExit = 1;
+        }
+        else
+        {
+            fprintf(stderr, "Unrecognized operation code: %s\n", operation);
+        }
     }
     
-    int bytesSent;
-    //char buffy[PROG3_BUFFER_SIZE];
-    char *buffy = "The right sequence of bytes";
-    bytesSent = send(sock, buffy, strlen(buffy) + 1, 0);
-    if (bytesSent < 0)
-    {
-        fprintf(stderr, "myftp Error: send(): %s\n", strerror(errno));
-        close(sock);
-        exit(3);
-    }
-
-    char recvBuffy[PROG3_BUFFER_SIZE];
-    int bytesRecvd;
-    bytesRecvd = recv(sock, recvBuffy, sizeof(recvBuffy), 0);
-    if (bytesRecvd < 0)
-    {
-        fprintf(stderr, "myftp Error: recv(): %s\n", strerror(errno));
-        close(sock);
-        exit(3);
-    }
-
-    printf("Got %d bytes\n", bytesRecvd);
-    int i;
-    for (i = 0; i < bytesRecvd; i++)
-    {
-        printf("%c", recvBuffy[i]);
-    }
-    puts("");
-
     close(sock);
     exit(0);
 }
