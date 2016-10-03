@@ -1,3 +1,5 @@
+#include "common.h"
+
 void errorCheckRecv(int sock, void *data, size_t data_len, const char *errorMsg) 
 {
     int status;
@@ -32,4 +34,27 @@ void errorCheckStrSend(int sock, char *stringToSend, const char *errorMsg)
         close(sock);
         exit(10);
     }
+}
+
+void hashFile(unsigned char hash[], FILE* fileToHash)
+{
+    rewind(fileToHash);
+    //find the MD5 hash of the file:
+    MHASH td;
+    unsigned char buffer;
+    td = mhash_init(MHASH_MD5);
+    if (td == MHASH_FAILED) 
+    {
+        perror("myftpd: mhash_init()");
+        exit(4);
+    }
+  
+    while (fread(&buffer, 1, 1, fileToHash) == 1) 
+    {
+        mhash(td, &buffer, 1);
+    }
+  
+    //finalize hash generation
+    mhash_deinit(td, hash);
+    rewind(fileToHash);
 }

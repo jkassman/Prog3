@@ -16,6 +16,6 @@
 void errorCheckRecv(int sock, void *data, size_t data_len, const char *errorMsg);
 void errorCheckSend(int sock, void *data, size_t data_len, const char *errorMsg);
 void errorCheckStrSend(int sock, char *stringToSend, const char *errorMsg);
-
+void hashFile(unsigned char hash[], FILE* fileToHash);
 
 #endif

@@ -65,22 +65,8 @@ void serverRequest(int sock) {
   if (fileSize == -1) return;
   
   //find the MD5 hash of the file:
-  MHASH td;
-  unsigned char buffer;
   unsigned char hash[16];
-  td = mhash_init(MHASH_MD5);
-  if (td == MHASH_FAILED) {
-    perror("myftpd: mhash_init()");
-    exit(4);
-  }
-  
-  while (fread(&buffer, 1, 1, fileToSend) == 1) {
-    mhash(td, &buffer, 1);
-    
-  }
-  
-  //finalize hash generation
-  mhash_deinit(td, hash);
+  hashFile(hash, fileToSend);
   
   //DEBUG PRINT
   printf("The hash is: ");
@@ -99,7 +85,6 @@ void serverRequest(int sock) {
   }
 
   //Time to send the file!
-  rewind(fileToSend);
   char sendFileBuffer[PROG3_BUFF_SIZE];
   size_t bytesRead = 0;
   size_t bytesThisTime = 0;
