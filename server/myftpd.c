@@ -1,15 +1,5 @@
 //This is a server
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <mhash.h>
-
-#define PROG3_BUFF_SIZE 4096
+#include "../common.h"
 
 void serverRequest(int sock) {
   char *queryMessage = "Please enter the name of the file to receive";
