@@ -134,7 +134,7 @@ int clientRequest(int sock)
     printf("\n");
 
     //Reads x number of bytes from server:
-    char file[fileLenBuffy];
+    char file[PROG3_BUFFER_SIZE];
     int counter = 0;
     FILE *f = fopen(fileName, "w");
     if(!f){
@@ -142,7 +142,7 @@ int clientRequest(int sock)
      return 0;
     }
     while(counter < fileLenBuffy){
-      fileRecvd = recv(sock, file, fileLenBuffy, 0);
+      fileRecvd = recv(sock, file, PROG3_BUFFER_SIZE, 0);
       if(fileRecvd < 0) 
       {
        fprintf(stderr, "myftp Error: recv() file from server: %s\n", strerror(errno));
