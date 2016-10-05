@@ -116,6 +116,45 @@ void serverRequest(int sock) {
   fclose(fileToSend);
 }
 
+void serverUpload(int sock) {
+  printf("Received Upload Operation");
+  //Receive the two-byte length of the filename
+  unsigned short int fileNameLen;
+  int status;
+  status = recv(sock,(char*) &fileNameLen, 2, 0);
+  if (status < 0) {
+    perror("myftpd: recv filename length");
+    close(sock);
+    exit(3);
+  }
+
+  fileNameLen = ntohs(fileNameLen);
+  //DEBUG PRINT
+  printf("The file name length is %d\n", fileNameLen);
+
+  char filename[fileNameLen];
+  //Receive the name of the file:
+  status = recv(sock, filename, fileNameLen, 0);
+  if (status < 0) {
+    perror("myftpd: recv filename");
+    close(sock);
+    exit(3);
+  }
+  printf("Receieved %d bytes\n", status);
+  printf("The name of the file is %s\n", filename);
+
+  char *ackMessage = "Acknowledge Received Filename: Ready to Receive File";
+  status = send(sock,ackMessage,strlen(ackMessage),0);
+  if (status < 0) {
+    perror("myftpd: send() req query");
+    close(sock);
+    exit(3);
+  }
+
+}
+
+
+
 int main(int argc, char * argv[]){
   struct sockaddr_in sin;
   char buf[PROG3_BUFF_SIZE];
@@ -172,7 +211,7 @@ int main(int argc, char * argv[]){
 	serverRequest(new_s);
       }
       else if(strcmp("UPL",buf)==0){
-        strcpy(message,"You sent UPL! ay lmao\n");
+        serverUpload(new_s);
       }
       else if(strcmp("DEL",buf)==0){
         strcpy(message,"You sent DEL! w00t!\n");
