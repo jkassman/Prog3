@@ -14,6 +14,7 @@
 #include <arpa/inet.h>
 #include <limits.h>
 #include <netdb.h>
+#include "../common.h"
 
 #define PROG3_BUFFER_SIZE 4096
 
@@ -55,6 +56,20 @@ void sendOpCode(const char *opcode, int sock)
         exit(3);
     }
 }
+int hashCompare(unsigned char *hash1, unsigned char *hash2) {
+    int i;
+    if (sizeof(hash1) != sizeof(hash2)){
+      return 1;
+    }else{
+      for(i = 0; i < sizeof(hash1); i++) {
+        if(hash1[i] != hash2[i]) {
+	  return 1;
+        }
+      }
+    }
+    return 0;
+
+}
 
 int clientRequest(int sock)
 {
@@ -65,6 +80,7 @@ int clientRequest(int sock)
     unsigned short int fileNameLenToSend;
     char fileName[1000];
     unsigned char hash[16];
+    unsigned char recvdHash[16];
     unsigned int fileLenBuffy;
     int status;
     int bytesRecvd;
@@ -152,16 +168,51 @@ int clientRequest(int sock)
       fwrite(file, 1, fileRecvd, f);  //write into file f and save
       counter = counter + fileRecvd;
     }
-    fclose(f);
 
     //Computes the MD5 hash of recieved file: 
+    printf("Before hashFile \n");
+    fflush(f);
+    fclose(f);
+    f = fopen(fileName, "r");
+    hashFile(recvdHash, f);
+    fclose(f);
+   
+    int k;
+    printf("New File Hash Value: ");
+    for(k = 0; k < 16; k++) {
+      printf("%02x.", recvdHash[k]);
+    }
+    printf("\n");
+
+    //Compares the two hashes:
+    if(!hashCompare(hash, recvdHash)) {
+      printf("The hashes match!\n");
+    }else{
+      printf("The hashes do not match...\n");
+    }
 
     return 0;
 }
 
 int clientUpload(int sock)
 {
+    char fileName[100];
+
+    //Send Op Code to server:
+
     sendOpCode("UPL", sock);
+
+    //Getting the file name from the user:
+
+    printf("Please enter the name of the file you would like to upload: ");
+    fgets(fileName, 100, stdin);
+    
+    //Checking to see if the file exists:
+   /* if (access(filename, F_OK) < 0) {
+      //not a file, send -1;
+      fileSize = -1;
+      fileSize = htonl(fileSize);
+   */
     return 0;
 }
 
