@@ -84,6 +84,9 @@ void serverRequest(int sock) {
     exit(3);
   }
 
+  sendFile(sock, fileToSend, fileSize, "myftpd");
+
+  /*
   //Time to send the file!
   char sendFileBuffer[PROG3_BUFF_SIZE];
   size_t bytesRead = 0;
@@ -112,6 +115,7 @@ void serverRequest(int sock) {
     }
   }
   puts("Finished sending the file!");
+  */
 
   fclose(fileToSend);
 }
