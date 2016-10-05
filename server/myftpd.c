@@ -49,9 +49,7 @@ void serverRequest(int sock) {
       close(sock);
       exit(6);
     }
-    fseek(fileToSend, 0, SEEK_END);
-    fileSize = (unsigned int) ftell(fileToSend);
-    rewind(fileToSend);
+    fileSize = getFileSize(fileToSend);
   }  
   //send the 4 byte integer
   status = send(sock, (char*) &fileSize, 4, 0);
@@ -84,38 +82,8 @@ void serverRequest(int sock) {
     exit(3);
   }
 
+  //Send the file over the socket
   sendFile(sock, fileToSend, fileSize, "myftpd");
-
-  /*
-  //Time to send the file!
-  char sendFileBuffer[PROG3_BUFF_SIZE];
-  size_t bytesRead = 0;
-  size_t bytesThisTime = 0;
-  
-  printf("The file pointer is at %ld\n", ftell(fileToSend));
-
-  while (bytesRead < fileSize) {
-    //Read up to the maximum buffer size from the file
-    bytesThisTime = fread(sendFileBuffer, 1, PROG3_BUFF_SIZE, fileToSend);
-    if (bytesThisTime == 0) {
-      perror("myftpd: read requested file");
-      close(sock);
-      exit(6);
-    }
-    bytesRead += bytesThisTime;
-
-    printf("Read in %d bytes this time. bytesRead is %d and fileSize is %d\n", (int) bytesThisTime, (int) bytesRead, fileSize);
-
-    //Send out the bytes read in this iteration to the client
-    status = send(sock, sendFileBuffer, bytesThisTime, 0);
-    if (status < 0) {
-      perror("myftpd: send file");
-      close(sock);
-      exit(5);
-    }
-  }
-  puts("Finished sending the file!");
-  */
 
   fclose(fileToSend);
 }
