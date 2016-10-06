@@ -18,32 +18,8 @@
 
 #define PROG3_BUFFER_SIZE 4096
 
-/* stringToInt()
- Convert the string to a long in base 10 using strtol,
- If out of bounds, return an error: 1 if too low, 2 if too high.
- If any unrecognized characters, return 3.
- if successful, return 0.
-*/
-int stringToInt(int *destInt,char *toConvert, int minVal, int maxVal)
-{
-    char *errorChecker = NULL;
-    long long veryLong = strtol(toConvert, &errorChecker, 10);
-    if (errorChecker != NULL && *errorChecker != '\0')
-    { //unrecognized character
-        return 3;
-    }
-    if (veryLong > maxVal)
-    { 
-        return 2;
-    }
-    else if (veryLong < minVal)
-    {
-        return 1;
-    }
-    *destInt = (int) veryLong;
-    return 0;
-}
-
+#define PROG3_SEND_OP_ERR "myftp: send opcode"
+/*
 void sendOpCode(const char *opcode, int sock)
 {
     //Send opcode to the server
@@ -56,24 +32,10 @@ void sendOpCode(const char *opcode, int sock)
         exit(3);
     }
 }
-int hashCompare(unsigned char *hash1, unsigned char *hash2) {
-    int i;
-    if (sizeof(hash1) != sizeof(hash2)){
-      return 1;
-    }else{
-      for(i = 0; i < sizeof(hash1); i++) {
-        if(hash1[i] != hash2[i]) {
-	  return 1;
-        }
-      }
-    }
-    return 0;
-
-}
-
+*/
 int clientRequest(int sock)
 {
-    sendOpCode("REQ", sock);
+    errorCheckStrSend(sock, "REQ", PROG3_SEND_OP_ERR);
     //Receive query from the server
     char recvQuery[PROG3_BUFFER_SIZE];
     unsigned short int fileNameLen;
@@ -84,7 +46,7 @@ int clientRequest(int sock)
     unsigned int fileLenBuffy;
     int status;
     int bytesRecvd;
-    int fileLenRecvd, hashRecvd, fileRecvd;
+    int fileLenRecvd, hashRecvd; // fileRecvd;
     bytesRecvd = recv(sock, recvQuery, sizeof(recvQuery), 0);
     if (bytesRecvd < 0)
     {
@@ -114,7 +76,7 @@ int clientRequest(int sock)
         close(sock);
         exit(3);
     }
-    sendOpCode(fileName, sock);
+    errorCheckStrSend(sock, fileName, "myftp: send filename");
     
     //Receives 32-bit file length:
     fileLenRecvd = recv(sock, (char *)&fileLenBuffy, 4, 0);
@@ -149,29 +111,15 @@ int clientRequest(int sock)
     }
     printf("\n");
 
-    //Reads x number of bytes from server:
-    char file[PROG3_BUFFER_SIZE];
-    int counter = 0;
+    //Receieve a file from the serer:
     FILE *f = fopen(fileName, "w");
     if(!f){
      printf("Error opening file \n");
      return 0;
     }
-    while(counter < fileLenBuffy){
-      fileRecvd = recv(sock, file, PROG3_BUFFER_SIZE, 0);
-      if(fileRecvd < 0) 
-      {
-       fprintf(stderr, "myftp Error: recv() file from server: %s\n", strerror(errno));
-        close(sock);
-        exit(3);
-      } 
-      fwrite(file, 1, fileRecvd, f);  //write into file f and save
-      counter = counter + fileRecvd;
-    }
+    recvFile(sock, f, fileLenBuffy, "myftp");
 
     //Computes the MD5 hash of recieved file: 
-    printf("Before hashFile \n");
-    fflush(f);
     fclose(f);
     f = fopen(fileName, "r");
     hashFile(recvdHash, f);
@@ -200,8 +148,7 @@ int clientUpload(int sock)
 
     //Send Op Code to server:
 
-    sendOpCode("UPL", sock);
-
+    errorCheckStrSend(sock, "UPL", PROG3_SEND_OP_ERR);
     //Getting the file name from the user:
 
     printf("Please enter the name of the file you would like to upload: ");
@@ -218,37 +165,37 @@ int clientUpload(int sock)
 
 int clientDelete(int sock)
 {
-    sendOpCode("DEL", sock);
+    errorCheckStrSend(sock, "DEL", PROG3_SEND_OP_ERR);
     return 0;
 }
 
 int clientList(int sock)
 {
-    sendOpCode("LIS", sock);
+    errorCheckStrSend(sock, "LIS", PROG3_SEND_OP_ERR);
     return 0;
 }
 
 int clientMkdir(int sock)
 {
-    sendOpCode("MKD", sock);
+    errorCheckStrSend(sock, "MKD", PROG3_SEND_OP_ERR);
     return 0;
 }
 
 int clientRmdir(int sock)
 {
-    sendOpCode("RMD", sock);
+    errorCheckStrSend(sock, "RMD", PROG3_SEND_OP_ERR);
     return 0;
 }
 
 int clientCd(int sock)
 {
-    sendOpCode("CHD", sock);
+    errorCheckStrSend(sock, "CHD", PROG3_SEND_OP_ERR);
     return 0;
 }
 
 void clientExit(int sock)
 {
-    sendOpCode("XIT", sock);
+    errorCheckStrSend(sock, "XIT", PROG3_SEND_OP_ERR);
     printf("The session has been closed\n");
 }
  
