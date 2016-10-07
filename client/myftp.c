@@ -19,6 +19,8 @@
 #define PROG3_BUFFER_SIZE 4096
 
 #define PROG3_SEND_OP_ERR "myftp: send opcode"
+#define PROG3_SEND_NUM_ERR "myftp: send number error"
+#define PROG3_SEND_STR_ERR "myftp: send string error"
 /*
 void sendOpCode(const char *opcode, int sock)
 {
@@ -145,21 +147,45 @@ int clientRequest(int sock)
 int clientUpload(int sock)
 {
     char fileName[100];
+    unsigned int fileSize;
+    FILE *fileToSend;
+    short int fileNameSize;
 
     //Send Op Code to server:
-
     errorCheckStrSend(sock, "UPL", PROG3_SEND_OP_ERR);
-    //Getting the file name from the user:
 
+    //Getting the file name from the user:
     printf("Please enter the name of the file you would like to upload: ");
     fgets(fileName, 100, stdin);
     
     //Checking to see if the file exists:
-   /* if (access(filename, F_OK) < 0) {
+    if (access(fileName, F_OK) < 0) {
       //not a file, send -1;
       fileSize = -1;
       fileSize = htonl(fileSize);
-   */
+    fileToSend = fopen(filename, "r");
+    if (!fileToSend) {
+      perror("myftpd: fopen()");
+      exit(6);
+    }
+    fileSize = getFileSize(fileToSend);
+    fileNameSize = strlen(fileName);
+   
+    //Sending over the length of the file name followed by the file name:
+    
+    errorCheckSend(sock, (char*)&fileNameSize, 2, PROG3_SEND_NUM_ERR);
+    errorCheckStrSend(sock, fileName, PROG3_SEND_STR_ERR);
+
+    //Receives acknowledgement from the server:
+
+    //Sends over the file size (32-bit value):
+   
+    //Sends over actual file to server:
+
+    //Computes MD5 Hash and sends it as 16-byte string:
+
+    //return to "prompt user for operation" state:
+  }  
     return 0;
 }
 
