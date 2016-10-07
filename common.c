@@ -211,7 +211,7 @@ void recvFile(int sock, FILE *f, unsigned int fileSize,
 
     while(counter < fileSize){
         int minRecVal = min(PROG3_BUFF_SIZE, fileSize - counter);
-        fileRecvd = recv(sock, file, PROG3_BUFF_SIZE, 0);
+        fileRecvd = recv(sock, file, minRecVal, 0);
         if(fileRecvd < 0) 
         {
             fprintf(stderr, "%s Error: recv() file from server: %s\n", 
