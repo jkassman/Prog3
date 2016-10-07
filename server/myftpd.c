@@ -97,8 +97,6 @@ void serverUpload(int sock) {
   int status;
   int fileLenRecvd, hashRecvd; // fileRecvd;
 
-  printf("Received Upload Operation");
-
   //Receive the two-byte length of the filename
   status = recv(sock,(char*) &fileNameLen, 2, 0);
   if (status < 0) {
@@ -153,7 +151,7 @@ void serverUpload(int sock) {
    printf("Error opening file \n");
    return;
   }
-  recvFile(sock, f, fileLenBuffy, "myftp");
+  recvFile(sock, f, fileLenBuffy, "myftpd");
 
   //Computes the MD5 hash of recieved file: 
   fclose(f);
@@ -186,6 +184,27 @@ void serverUpload(int sock) {
   return;
 }
 
+void serverList(int sock){
+  char command[50];
+  int fileSize;
+  int sizeToSend;
+
+  strcpy(command, "ls > tempList.txt");
+  system(command);
+
+  FILE *f = fopen("tempList.txt","r");
+
+  fileSize = getFileSize(f);
+  sizeToSend = htonl(fileSize);
+
+  errorCheckSend(sock, &sizeToSend, 4, "myftpd");
+
+  sendFile(sock, f, fileSize, "myftpd");
+
+  strcpy(command, "rm tempList.txt");
+  system(command);
+
+}
 
 
 int main(int argc, char * argv[]){
@@ -246,11 +265,11 @@ int main(int argc, char * argv[]){
       else if(strcmp("UPL",buf)==0){
         serverUpload(new_s);
       }
-      else if(strcmp("DEL",buf)==0){
-        strcpy(message,"You sent DEL! w00t!\n");
-      }
       else if(strcmp("LIS",buf)==0){
-        strcpy(message,"You sent LIS! Booyah!\n");
+        serverList(new_s);
+      }
+      else if(strcmp("DEL",buf)==0){
+        strcpy(message,"You sent DEL! Booyah!\n");
       }
       else if(strcmp("MKD",buf)==0){
         strcpy(message,"You sent MKD! Way to go man!\n");
