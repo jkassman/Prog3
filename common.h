@@ -13,9 +13,9 @@
 
 #define PROG3_BUFF_SIZE 4096
 
-void errorCheckRecv(int sock, void *data, size_t data_len, const char *errorMsg);
-void errorCheckSend(int sock, void *data, size_t data_len, const char *errorMsg);
-void errorCheckStrSend(int sock, char *stringToSend, const char *errorMsg);
+int errorCheckRecv(int sock, void *data, size_t data_len, const char *errorMsg);
+int errorCheckSend(int sock, void *data, size_t data_len, const char *errorMsg);
+int errorCheckStrSend(int sock, char *stringToSend, const char *errorMsg);
 int stringToInt(int *destInt,char *toConvert, int minVal, int maxVal);
 void hashFile(unsigned char hash[], FILE* fileToHash);
 int hashCompare(unsigned char *hash1, unsigned char *hash2);

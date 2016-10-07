@@ -21,20 +21,7 @@
 #define PROG3_SEND_OP_ERR "myftp: send opcode"
 #define PROG3_SEND_NUM_ERR "myftp: send number error"
 #define PROG3_SEND_STR_ERR "myftp: send string error"
-/*
-void sendOpCode(const char *opcode, int sock)
-{
-    //Send opcode to the server
-    int status;
-    status = send(sock, opcode, strlen(opcode) + 1, 0);
-    if (status < 0)
-    {
-        fprintf(stderr, "myftp error sending opcode: %s\n", strerror(errno));
-        close(sock);
-        exit(3);
-    }
-}
-*/
+
 int clientRequest(int sock)
 {
     errorCheckStrSend(sock, "REQ", PROG3_SEND_OP_ERR);
@@ -46,16 +33,9 @@ int clientRequest(int sock)
     unsigned char hash[16];
     unsigned char recvdHash[16];
     unsigned int fileLenBuffy;
-    int status;
     int bytesRecvd;
-    int fileLenRecvd, hashRecvd; // fileRecvd;
-    bytesRecvd = recv(sock, recvQuery, sizeof(recvQuery), 0);
-    if (bytesRecvd < 0)
-    {
-        fprintf(stderr, "myftp Error: recv(): %s\n", strerror(errno));
-        close(sock);
-        exit(3);
-    }
+    bytesRecvd = errorCheckRecv(sock, recvQuery, sizeof(recvQuery), 
+                                "myftp: query recv()");
 
     //print out received query:
     int i;
@@ -65,29 +45,20 @@ int clientRequest(int sock)
     }
     puts(""); 
 
-    //Sends file name and length:
+    //Get file name and length:
     fgets(fileName, 1000, stdin);
     fileNameLen = strlen(fileName);
     fileName[(strlen(fileName)-1)] = '\0';
     fileNameLenToSend = htons(fileNameLen);
 
-    status = send(sock, (char *)&fileNameLenToSend,2, 0);
-    if (status < 0)
-    {
-        fprintf(stderr, "myftp error sending file name length for REQ: %s\n", strerror(errno));
-        close(sock);
-        exit(3);
-    }
+    //Sends file name length and file name:
+    errorCheckSend(sock, &fileNameLenToSend, 2, 
+                   "myftp: REQ: send file name length");
     errorCheckStrSend(sock, fileName, "myftp: send filename");
     
-    //Receives 32-bit file length:
-    fileLenRecvd = recv(sock, (char *)&fileLenBuffy, 4, 0);
-    if(fileLenRecvd < 0) 
-    {
-       fprintf(stderr, "myftp Error: recv() 32-bit file length: %s\n", strerror(errno));
-        close(sock);
-        exit(3);
-    }
+    //Receive 32-bit file size:
+    errorCheckRecv(sock, &fileLenBuffy, 4,
+                   "myftp: recv() 32-bit file length");
 
     printf("File length: %i \n", fileLenBuffy);
 
@@ -98,13 +69,7 @@ int clientRequest(int sock)
     }
 
     //Receives MD5 Hash:
-    hashRecvd = recv(sock, hash, 16, 0);
-    if(hashRecvd < 0) 
-    {
-       fprintf(stderr, "myftp Error: recv() MD5 hash: %s\n", strerror(errno));
-        close(sock);
-        exit(3);
-    }
+    errorCheckRecv(sock, hash, 16, "myftp: recv() MD5 hash");
   
     int j;
     printf("Hash value: \n");
