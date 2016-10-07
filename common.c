@@ -12,17 +12,20 @@
   data: A buffer into which at most data_len data will be placed.
   data_len: size in bytes of the data to receive.
   errorMsg: What to print out (perror) before exiting if something goes wrong.
+
+  returns number of bytes received
 */
-void errorCheckRecv(int sock, void *data, size_t data_len, const char *errorMsg) 
+int errorCheckRecv(int sock, void *data, size_t data_len, const char *errorMsg) 
 {
-    int status;
-    status = recv(sock, (char*) data, data_len, 0);
-    if (status < 0) 
+    int bytesRcvd;
+    bytesRcvd = recv(sock, (char*) data, data_len, 0);
+    if (bytesRcvd < 0) 
     {
         perror(errorMsg);
         close(sock);
         exit(8);
     }
+    return bytesRcvd;
 }
 
 /*
@@ -33,31 +36,36 @@ void errorCheckRecv(int sock, void *data, size_t data_len, const char *errorMsg)
   data: A buffer of size data_len that will be sent.
   data_len: size in bytes of the data to send.
   errorMsg: What to print out (perror) before exiting if something goes wrong.
+
+  returns number of bytes sent
 */
-void errorCheckSend(int sock, void *data, size_t data_len, const char *errorMsg)
+int errorCheckSend(int sock, void *data, size_t data_len, const char *errorMsg)
 {
-    int status;
-    status = send(sock, (char*) data, data_len, 0);
-    if (status < 0)
+    int bytesSent;
+    bytesSent = send(sock, (char*) data, data_len, 0);
+    if (bytesSent < 0)
     {
         perror(errorMsg);
         close(sock);
         exit(9);
     }
+    return bytesSent;
 }
 /*
   Exactly the same as errorCheckSend except it uses strlen() as data_len.
+  returns number of bytes sent
  */
-void errorCheckStrSend(int sock, char *stringToSend, const char *errorMsg)
+int errorCheckStrSend(int sock, char *stringToSend, const char *errorMsg)
 {
-    int status;
-    status = send(sock, stringToSend, strlen(stringToSend) + 1, 0);
-    if (status < 0)
+    int bytesSent;
+    bytesSent = send(sock, stringToSend, strlen(stringToSend) + 1, 0);
+    if (bytesSent < 0)
     {
         perror(errorMsg);
         close(sock);
         exit(10);
     }
+    return bytesSent;
 }
 
 /* stringToInt()
