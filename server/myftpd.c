@@ -89,10 +89,17 @@ void serverRequest(int sock) {
 }
 
 void serverUpload(int sock) {
-  printf("Received Upload Operation");
-  //Receive the two-byte length of the filename
   unsigned short int fileNameLen;
+  char fileName[1000];
+  unsigned char hash[16];
+  unsigned char recvdHash[16];
+  unsigned int fileLenBuffy;
   int status;
+  int fileLenRecvd, hashRecvd; // fileRecvd;
+
+  printf("Received Upload Operation");
+
+  //Receive the two-byte length of the filename
   status = recv(sock,(char*) &fileNameLen, 2, 0);
   if (status < 0) {
     perror("myftpd: recv filename length");
@@ -123,6 +130,60 @@ void serverUpload(int sock) {
     exit(3);
   }
 
+  //Receives 32-bit file length:
+  fileLenRecvd = recv(sock, (char *)&fileLenBuffy, 4, 0);
+  if(fileLenRecvd < 0) 
+  {
+     fprintf(stderr, "myftp Error: recv() 32-bit file length: %s\n", strerror(errno));
+      close(sock);
+      exit(3);
+  }
+
+  printf("File length: %i \n", fileLenBuffy);
+
+  //Decode 32-bit value:
+  if(fileLenBuffy == -1) {
+    printf("File does not exist on server.\n");
+    return;
+  }
+
+  //Receieve a file from the client:
+  FILE *f = fopen(fileName, "w");
+  if(!f){
+   printf("Error opening file \n");
+   return;
+  }
+  recvFile(sock, f, fileLenBuffy, "myftp");
+
+  //Computes the MD5 hash of recieved file: 
+  fclose(f);
+  f = fopen(fileName, "r");
+  hashFile(recvdHash, f);
+  fclose(f);
+
+  //Receives MD5 Hash:
+  hashRecvd = recv(sock, hash, 16, 0);
+  if(hashRecvd < 0) 
+  {
+     fprintf(stderr, "myftp Error: recv() MD5 hash: %s\n", strerror(errno));
+      close(sock);
+      exit(3);
+  }
+  
+  int j;
+  printf("Hash value: \n");
+  for( j = 0; j < 16; j++) {
+    printf("%02x.", hash[j]);
+  }
+  printf("\n");
+
+  //Compares the two hashes:
+  if(!hashCompare(hash, recvdHash)) {
+    printf("The hashes match!\n");
+  }else{
+    printf("The hashes do not match...\n");
+  }
+  return;
 }
 
 
