@@ -136,19 +136,153 @@ int clientDelete(int sock)
 
 int clientList(int sock)
 {
+    //send opcode
     errorCheckStrSend(sock, "LIS", PROG3_SEND_OP_ERR);
+
+    //receive file size
+    int fileSize;
+    errorCheckRecv(sock, &fileSize, 4, "myftp: LIS: recv() file size");
+    fileSize = ntohl(fileSize);
+    
+    //Make a temporary file:
+    char filename[32];
+    strcpy(filename, "/tmp/prog3LIS_XXXXXX");
+    int tempFd = mkstemp(filename);
+    FILE* tempF = fdopen(tempFd, "w");
+    
+    //actually receive the file
+    recvFile(sock, tempF, fileSize, "myftp");
+    
+    //print out all files in the listings file
+    char sysCommand[64];
+    fflush(tempF);
+    sprintf(sysCommand, "cat %s", filename);
+    int status;
+    status = system(sysCommand);
+    if (status == -1)
+    {
+        perror("myftp: display LIS file");
+        exit(42);
+    }
+
+    //Remove the temporary file
+    fclose(tempF);
+    sprintf(sysCommand, "rm %s", filename);
+    status = system(sysCommand);
+    if (status == -1)
+    {
+        perror("myftp: delete LIS file");
+        exit(42);
+    }
+    
     return 0;
+}
+
+//Operation is the code (e.g. MKD)
+//userMessage is how to prompt the user.
+void startClientDir(int sock, char *operation, char *userMessage)
+{
+    errorCheckStrSend(sock, operation, PROG3_SEND_OP_ERR);
+    unsigned short int dirNameLen;
+    unsigned short int dirNameLenToSend;
+    char dirname[1000];
+    //Grab user input
+    printf("%s", userMessage);
+    dirNameLen = getNameFromUser(dirname, 1000);
+    
+    //send the file name length
+    dirNameLenToSend = htons(dirNameLen);
+    char errorStr[80];
+    sprintf(errorStr, "myftp: %s: send() file name length", operation);
+    errorCheckSend(sock, &dirNameLenToSend, 2, errorStr);
+
+    //send the file name:
+    sprintf(errorStr, "myftp: %s: send() filename", operation);
+    errorCheckStrSend(sock, dirname, errorStr);
 }
 
 int clientMkdir(int sock)
 {
-    errorCheckStrSend(sock, "MKD", PROG3_SEND_OP_ERR);
+/*    errorCheckStrSend(sock, "MKD", PROG3_SEND_OP_ERR);
+    unsigned short int dirNameLen;
+    unsigned short int dirNameLenToSend;
+    char dirname[1000];
+    //Grab user input
+    puts("Please enter the name of the directory to make:");
+    dirNameLen = getNameFromUser(dirname, 1000);
+    
+    //send the file name length
+    dirNameLenToSend = htons(dirNameLen);
+    errorCheckSend(sock, &dirNameLenToSend, 2, 
+                   "myftp: MKD: send() file name length");
+
+    //send the file name:
+    errorCheckStrSend(sock, dirname, "myftp: MKD: send() filename");
+*/
+    startClientDir(sock, "MKD", "Please enter the name of the directory to make:\n");
+    //get status of directory make
+    int dirStatus;
+    errorCheckRecv(sock, &dirStatus, 4, "myftp: MKD: recv() directory status");
+    dirStatus = ntohl(dirStatus);
+
+    //print out status of directory make
+    switch (dirStatus)
+    {
+    case 1:
+        puts("The directory was successfully made.");
+        break;
+    case -2:
+        puts("The directory already exists on server.");
+        break;
+    case -1:
+        puts("Error in making directory.");
+        break;
+    default:
+        fprintf(stderr, "Wait, it shouldn't be possible to get here.\n");
+    }
+    
     return 0;
 }
 
 int clientRmdir(int sock)
 {
-    errorCheckStrSend(sock, "RMD", PROG3_SEND_OP_ERR);
+    startClientDir(sock, "RMD", 
+                   "Please enter the name of the directory to remove:\n");
+
+    int dirStatus;
+    //receive directory status from server
+    errorCheckRecv(sock, &dirStatus, 4, 
+                   "myftp: RMD: recv() dirStatus");
+    dirStatus = ntohl(dirStatus);
+    if (dirStatus > 0)
+    {
+        printf("Are you sure you want to delete the directory? (Yes/No): ");
+        char answer[8];
+        strcpy(answer, "dumb");
+        int wrong = 0;
+        while (strcmp(answer, "yes") && strcmp(answer, "no"))
+        {
+            fgets(answer, 5, stdin);
+            int i;
+            for (i = 0; i < strlen(answer); i++)
+            {
+                answer[i] = tolower(answer[i]);
+            }
+            if (wrong)
+            {
+                printf("Please enter either Yes or No: ");
+            }
+            wrong = 1;
+        }
+        if (!strcmp(answer, "no"))
+        {
+            errorCheckStrSend(sock, "No", "myftp: RMD: send() No");
+        }
+        if (!strcmp(answer, "yes"))
+        {
+            errorCheckStrSend(sock, "Yes", "myftp: RMD: send() Yes");
+        }
+    }
     return 0;
 }
 
