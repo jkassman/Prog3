@@ -24,5 +24,6 @@ void sendFile(int sock, FILE* file, unsigned int fileSize,
 void recvFile(int sock, FILE *f, unsigned int fileSize,
               const char *programName);
 unsigned int getFileSize(FILE *f);
-
+int getNameFromUser(char *name, int maxNameLen);
+int min(int x, int y);
 #endif

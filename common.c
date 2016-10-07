@@ -210,6 +210,7 @@ void recvFile(int sock, FILE *f, unsigned int fileSize,
     int fileRecvd;
 
     while(counter < fileSize){
+        int minRecVal = min(PROG3_BUFF_SIZE, fileSize - counter);
         fileRecvd = recv(sock, file, PROG3_BUFF_SIZE, 0);
         if(fileRecvd < 0) 
         {
@@ -234,4 +235,27 @@ unsigned int getFileSize(FILE *f)
     rewind(f);
     
     return toReturn;
+}
+
+//name will be overwritten.
+//returns name length, including null character
+int getNameFromUser(char *name, int maxNameLen)
+{
+    int nameLen;
+    fgets(name, maxNameLen, stdin);
+    nameLen = strlen(name);
+    name[nameLen-1] = '\0'; //remove \n
+    return nameLen;
+}
+
+int min(int x, int y)
+{
+    if (x < y)
+    {
+        return x;
+    }
+    else
+    {
+        return y;
+    }
 }
