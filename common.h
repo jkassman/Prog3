@@ -10,6 +10,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <mhash.h>
+#include <dirent.h>
 
 #define PROG3_BUFF_SIZE 4096
 
