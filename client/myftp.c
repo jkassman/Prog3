@@ -136,7 +136,45 @@ int clientDelete(int sock)
 
 int clientList(int sock)
 {
+    //send opcode
     errorCheckStrSend(sock, "LIS", PROG3_SEND_OP_ERR);
+
+    //receive file size
+    int fileSize;
+    errorCheckRecv(sock, &fileSize, 4, "myftp: LIS: recv() file size");
+    fileSize = ntohl(fileSize);
+    
+    //Make a temporary file:
+    char filename[32];
+    strcpy(filename, "/tmp/prog3LIS_XXXXXX");
+    int tempFd = mkstemp(filename);
+    FILE* tempF = fdopen(tempFd, "w");
+    
+    //actually receive the file
+    recvFile(sock, tempF, fileSize, "myftp");
+    
+    //print out all files in the listings file
+    char sysCommand[64];
+    fflush(tempF);
+    sprintf(sysCommand, "cat %s", filename);
+    int status;
+    status = system(sysCommand);
+    if (status == -1)
+    {
+        perror("myftp: display LIS file");
+        exit(42);
+    }
+
+    //Remove the temporary file
+    fclose(tempF);
+    sprintf(sysCommand, "rm %s", filename);
+    status = system(sysCommand);
+    if (status == -1)
+    {
+        perror("myftp: delete LIS file");
+        exit(42);
+    }
+    
     return 0;
 }
 
