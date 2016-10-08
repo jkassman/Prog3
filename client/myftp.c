@@ -291,7 +291,7 @@ int clientMkdir(int sock)
 
 int clientRmdir(int sock)
 {
-    startClientDir(sock, "RMD", 
+    startClientDir(sock, "RMD",
                    "Please enter the name of the directory to remove:\n");
 
     int dirStatus;
@@ -299,27 +299,28 @@ int clientRmdir(int sock)
     errorCheckRecv(sock, &dirStatus, 4, 
                    "myftp: RMD: recv() dirStatus");
     dirStatus = ntohl(dirStatus);
+    //DEBUG PRINT
+    printf("dirStatus is %d\n", dirStatus);
     if (dirStatus > 0)
     {
         printf("Are you sure you want to delete the directory? (Yes/No): ");
-        char answer[8];
-        strcpy(answer, "silly");
+        char answer[16];
         int wrong = 0;
-        while (strcmp(answer, "yes") && strcmp(answer, "no"))
+        do 
         {
-            fgets(answer, 5, stdin);
-            answer[strlen(answer)] = '\0';
+            if (wrong)
+            {
+                printf("Please enter either Yes or No: ");
+            }
+            fgets(answer, 12, stdin);
+            answer[strlen(answer)-1] = '\0'; //chop off the newline
             int i;
             for (i = 0; i < strlen(answer); i++)
             {
                 answer[i] = tolower(answer[i]);
             }
-            if (wrong)
-            {
-                printf("Please enter either Yes or No: ");
-            }
             wrong = 1;
-        }
+        } while (strcmp(answer, "yes") && strcmp(answer, "no"));
         if (!strcmp(answer, "no"))
         {
             errorCheckStrSend(sock, "No", "myftp: RMD: send() No");
@@ -328,6 +329,19 @@ int clientRmdir(int sock)
         if (!strcmp(answer, "yes"))
         {
             errorCheckStrSend(sock, "Yes", "myftp: RMD: send() Yes");
+            //check if successfuly deleted:
+            int deleteStatus;
+            errorCheckRecv(sock, &deleteStatus, 4, 
+                           "myftp: RMD: recv() delete status");
+            deleteStatus = ntohl(deleteStatus);
+            if (deleteStatus > 0)
+            {
+                puts("Directory Deleted.");
+            }
+            else
+            {
+                puts("Failed to delete directory.");
+            }
         }      
     }
     else
