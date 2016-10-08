@@ -63,7 +63,7 @@ int clientRequest(int sock)
     }
     printf("\n");
 
-    //Receieve a file from the serer:
+    //Receieve a file from the server:
     FILE *f = fopen(fileName, "w");
     if(!f){
      printf("Error opening file \n");
@@ -97,21 +97,79 @@ int clientRequest(int sock)
 int clientUpload(int sock)
 {
     char fileName[100];
+    char firstAck[100];
+    unsigned char hash[16];
+    unsigned int fileSize;
+    FILE *fileToSend;
+    unsigned int fileSizeToSend;
+    short int fileNameSize;
 
     //Send Op Code to server:
-
     errorCheckStrSend(sock, "UPL", PROG3_SEND_OP_ERR);
-    //Getting the file name from the user:
 
+    //Getting the file name from the user:
     printf("Please enter the name of the file you would like to upload: ");
     fgets(fileName, 100, stdin);
-    
+    printf("File Name: %s \n", fileName);
+    fileName[(strlen(fileName)-1)] = '\0';
+
     //Checking to see if the file exists:
-   /* if (access(filename, F_OK) < 0) {
-      //not a file, send -1;
-      fileSize = -1;
-      fileSize = htonl(fileSize);
-   */
+    if (access(fileName, F_OK) < 0) {
+      //if file does not exist...
+       printf("here ;w; \n");
+       perror("myftp()");
+       return 1;
+    } else { 
+       fileToSend = fopen(fileName, "r");
+      if (!fileToSend) {
+        printf("in can't send...\n");
+        perror("myftp() ");
+        close(sock);
+        exit(6);
+       }
+    }
+    
+    fileSize = getFileSize(fileToSend);
+    fileSizeToSend = htonl(getFileSize(fileToSend));
+    printf("File Size: %i \n", fileSize);
+    fileNameSize = htons(strlen(fileName)+1);
+    printf("FileNameSize: %i \n", fileNameSize);
+   
+    //Sending over the length of the file name followed by the file name:
+    
+    errorCheckSend(sock, &fileNameSize, 2, "myftp: sending length of file name");
+    errorCheckStrSend(sock, fileName, "myftp: sending file name");
+
+    //Receives acknowledgement from the server:
+
+    errorCheckRecv(sock, firstAck, sizeof(firstAck), "myftp: receiving first ack");
+    printf("%s \n", firstAck);
+
+    //Sends over the file size (32-bit value):
+
+    errorCheckSend(sock, &fileSizeToSend, 4, "myftp: sending file size");
+   
+    //Sends over actual file to server:
+
+    sendFile(sock, fileToSend, fileSize, "myftp:");
+
+    //Computes MD5 Hash and sends it as 16-byte string:
+
+    hashFile(hash, fileToSend);
+    fclose(fileToSend);
+
+    int k;
+    printf("File's Hash Value: ");
+    for(k = 0; k < 16; k++) {
+      printf("%02x.", hash[k]);
+    }
+    printf("\n");
+
+   // errorCheckStrSend(sock, (char*)hash, "myftp:");
+    errorCheckSend(sock, &hash, 16, "myftp: ");
+   printf("SSSSSSSSSSSSSSEEEEEEEEEEEEEEEEEEEENNNNNNNNNNNNNNNNNNNNNNNNNNNDDDDDDDDDDDDDDD\n");
+    //return to "prompt user for operation" state:
+ 
     return 0;
 }
 
