@@ -3,20 +3,7 @@
   netIDs: jkassman, lkuta, mpaulson
  */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <limits.h>
-#include <netdb.h>
 #include "../common.h"
-
-#define PROG3_BUFFER_SIZE 4096
 
 #define PROG3_SEND_OP_ERR "myftp: send opcode"
 
@@ -24,7 +11,7 @@ int clientRequest(int sock)
 {
     errorCheckStrSend(sock, "REQ", PROG3_SEND_OP_ERR);
     //Receive query from the server
-    char recvQuery[PROG3_BUFFER_SIZE];
+    char recvQuery[PROG3_BUFF_SIZE];
     unsigned short int fileNameLen;
     unsigned short int fileNameLenToSend;
     char fileName[1000];
@@ -258,11 +245,12 @@ int clientRmdir(int sock)
     {
         printf("Are you sure you want to delete the directory? (Yes/No): ");
         char answer[8];
-        strcpy(answer, "dumb");
+        strcpy(answer, "silly");
         int wrong = 0;
         while (strcmp(answer, "yes") && strcmp(answer, "no"))
         {
             fgets(answer, 5, stdin);
+            answer[strlen(answer)] = '\0';
             int i;
             for (i = 0; i < strlen(answer); i++)
             {
@@ -277,11 +265,16 @@ int clientRmdir(int sock)
         if (!strcmp(answer, "no"))
         {
             errorCheckStrSend(sock, "No", "myftp: RMD: send() No");
+            puts("Delete abandoned by the user!");
         }
         if (!strcmp(answer, "yes"))
         {
             errorCheckStrSend(sock, "Yes", "myftp: RMD: send() Yes");
-        }
+        }      
+    }
+    else
+    { 
+        puts("The directory does not exist on server.");
     }
     return 0;
 }
