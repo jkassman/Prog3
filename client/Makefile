@@ -1,3 +1,9 @@
+#  Authors: Jacob Kassman, Lauren Kuta, Matt Paulson
+#  netIDs: jkassman, lkuta, mpaulson
+#  Computer Networks: Programming Assignment 3
+#  Makefile 
+#  Makefile for our client code.
+
 myftp: myftp.c common.o
 	gcc -Wall myftp.c common.o -o myftp -lmhash
 	

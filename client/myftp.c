@@ -1,6 +1,9 @@
 /*
   Authors: Jacob Kassman, Lauren Kuta, Matt Paulson
   netIDs: jkassman, lkuta, mpaulson
+  Computer Networks: Programming Assignment 3
+  myftp.c
+  Creates a client and allows the client to execute a variety of functions.  
  */
 
 #include "../common.h"
