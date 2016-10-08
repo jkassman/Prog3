@@ -3,20 +3,7 @@
   netIDs: jkassman, lkuta, mpaulson
  */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <limits.h>
-#include <netdb.h>
 #include "../common.h"
-
-#define PROG3_BUFFER_SIZE 4096
 
 #define PROG3_SEND_OP_ERR "myftp: send opcode"
 
@@ -24,7 +11,7 @@ int clientRequest(int sock)
 {
     errorCheckStrSend(sock, "REQ", PROG3_SEND_OP_ERR);
     //Receive query from the server
-    char recvQuery[PROG3_BUFFER_SIZE];
+    char recvQuery[PROG3_BUFF_SIZE];
     unsigned short int fileNameLen;
     unsigned short int fileNameLenToSend;
     char fileName[1000];
@@ -304,7 +291,7 @@ int clientMkdir(int sock)
 
 int clientRmdir(int sock)
 {
-    startClientDir(sock, "RMD", 
+    startClientDir(sock, "RMD",
                    "Please enter the name of the directory to remove:\n");
 
     int dirStatus;
@@ -312,34 +299,54 @@ int clientRmdir(int sock)
     errorCheckRecv(sock, &dirStatus, 4, 
                    "myftp: RMD: recv() dirStatus");
     dirStatus = ntohl(dirStatus);
+    //DEBUG PRINT
+    printf("dirStatus is %d\n", dirStatus);
     if (dirStatus > 0)
     {
         printf("Are you sure you want to delete the directory? (Yes/No): ");
-        char answer[8];
-        strcpy(answer, "dumb");
+        char answer[16];
         int wrong = 0;
-        while (strcmp(answer, "yes") && strcmp(answer, "no"))
+        do 
         {
-            fgets(answer, 5, stdin);
+            if (wrong)
+            {
+                printf("Please enter either Yes or No: ");
+            }
+            fgets(answer, 12, stdin);
+            answer[strlen(answer)-1] = '\0'; //chop off the newline
             int i;
             for (i = 0; i < strlen(answer); i++)
             {
                 answer[i] = tolower(answer[i]);
             }
-            if (wrong)
-            {
-                printf("Please enter either Yes or No: ");
-            }
             wrong = 1;
-        }
+        } while (strcmp(answer, "yes") && strcmp(answer, "no"));
         if (!strcmp(answer, "no"))
         {
             errorCheckStrSend(sock, "No", "myftp: RMD: send() No");
+            puts("Delete abandoned by the user!");
         }
         if (!strcmp(answer, "yes"))
         {
             errorCheckStrSend(sock, "Yes", "myftp: RMD: send() Yes");
-        }
+            //check if successfuly deleted:
+            int deleteStatus;
+            errorCheckRecv(sock, &deleteStatus, 4, 
+                           "myftp: RMD: recv() delete status");
+            deleteStatus = ntohl(deleteStatus);
+            if (deleteStatus > 0)
+            {
+                puts("Directory Deleted.");
+            }
+            else
+            {
+                puts("Failed to delete directory.");
+            }
+        }      
+    }
+    else
+    { 
+        puts("The directory does not exist on server.");
     }
     return 0;
 }
