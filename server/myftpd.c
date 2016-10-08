@@ -90,14 +90,11 @@ void serverRequest(int sock) {
 
 void serverUpload(int sock) {
   unsigned short int fileNameLen;
-  char fileName[1000];
   unsigned char hash[16];
   unsigned char recvdHash[16];
   unsigned int fileLenBuffy;
   int status;
   int fileLenRecvd, hashRecvd; // fileRecvd;
-
-  printf("Received Upload Operation");
 
   //Receive the two-byte length of the filename
   status = recv(sock,(char*) &fileNameLen, 2, 0);
@@ -139,6 +136,7 @@ void serverUpload(int sock) {
       exit(3);
   }
 
+  fileLenBuffy = ntohl(fileLenBuffy);
   printf("File length: %i \n", fileLenBuffy);
 
   //Decode 32-bit value:
@@ -148,18 +146,22 @@ void serverUpload(int sock) {
   }
 
   //Receieve a file from the client:
-  FILE *f = fopen(fileName, "w");
+  FILE *f = fopen(filename, "w");
   if(!f){
    printf("Error opening file \n");
    return;
   }
-  recvFile(sock, f, fileLenBuffy, "myftp");
+  recvFile(sock, f, fileLenBuffy, "myftpd");
+
+  printf("About to compute hash\n");
 
   //Computes the MD5 hash of recieved file: 
   fclose(f);
-  f = fopen(fileName, "r");
+  f = fopen(filename, "r");
   hashFile(recvdHash, f);
   fclose(f);
+
+  printf("Computed hash\n");
 
   //Receives MD5 Hash:
   hashRecvd = recv(sock, hash, 16, 0);
@@ -169,6 +171,7 @@ void serverUpload(int sock) {
       close(sock);
       exit(3);
   }
+  printf("Received Hash\n");
   
   int j;
   printf("Hash value: \n");
@@ -186,7 +189,246 @@ void serverUpload(int sock) {
   return;
 }
 
+void serverList(int sock){
+  char command[50];
+  int fileSize;
+  int sizeToSend;
 
+  //create a temp file that contains the directory listing
+  strcpy(command, "ls > tempList.txt");
+  system(command);
+
+  FILE *f = fopen("tempList.txt","r");
+
+  //get the filesize
+  fileSize = getFileSize(f);
+  sizeToSend = htonl(fileSize);
+
+  //send the filesize to the client
+  errorCheckSend(sock, &sizeToSend, 4, "myftpd");
+
+  //send the file
+  sendFile(sock, f, fileSize, "myftpd");
+
+  //remove the temp file
+  strcpy(command, "rm tempList.txt");
+  system(command);
+
+}
+
+void serverDelete(int sock){
+  unsigned short int fileNameLen;
+  int status;
+  char command[50];
+  int confirmVal;
+  char clientConfirm[1000];
+
+  //Receive the two-byte length of the filename
+  status = recv(sock,(char*) &fileNameLen, 2, 0);
+  if (status < 0) {
+    perror("myftpd: recv filename length");
+    close(sock);
+    exit(3);
+  }
+
+  fileNameLen = ntohs(fileNameLen);
+  //DEBUG PRINT
+  printf("The file name length is %d\n", fileNameLen);
+
+  char filename[fileNameLen];
+  //Receive the name of the file:
+  status = recv(sock, filename, fileNameLen, 0);
+  if (status < 0) {
+    perror("myftpd: recv filename");
+    close(sock);
+    exit(3);
+  }
+  printf("Receieved %d bytes\n", status);
+  printf("The name of the file is %s\n", filename);
+
+  //if the file exists, send confirm value of 1
+  FILE* f = fopen(filename, "w");
+  if (f){
+    confirmVal = 1;
+  }
+  else{
+    confirmVal = -1; //otherwise sent confirm value of -1
+  }
+  confirmVal = ntohl(confirmVal);
+  errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
+
+  //receive confirmation of DEL from client
+  errorCheckRecv(sock, &clientConfirm, sizeof(clientConfirm), "myftpd");
+
+  if(strcmp("Yes",clientConfirm)==0){ //if DEL confirmed, delete file
+    sprintf(command, "rm %s", filename);
+    if (system(command) == 0){
+      confirmVal = 1; //send back 1 if deletion successful
+    }
+    else{
+      confirmVal = -1;//otherwise send back -1
+    }
+    confirmVal = ntohl(confirmVal);
+    errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
+  }
+  else if(strcmp("No",clientConfirm)==0){ //if DEL cancelled, go back to wait for operation state
+    return;
+  }
+}
+
+void serverMKD(int sock){
+  unsigned short int dirNameLen;
+  int status;
+  char command[50];
+  int confirmVal;
+
+  //Receive the two-byte length of the dirname
+  status = recv(sock,(char*) &dirNameLen, 2, 0);
+  if (status < 0) {
+    perror("myftpd: recv dirname length");
+    close(sock);
+    exit(3);
+  }
+
+  dirNameLen = ntohs(dirNameLen);
+  //DEBUG PRINT
+  printf("The directory name length is %d\n", dirNameLen);
+
+  char dirname[dirNameLen];
+  //Receive the name of the directory:
+  status = recv(sock, dirname, dirNameLen, 0);
+  if (status < 0) {
+    perror("myftpd: recv dirname");
+    close(sock);
+    exit(3);
+  }
+  printf("Receieved %d bytes\n", status);
+  printf("The name of the directory is %s\n", dirname);
+
+  //if the directory exists, send confirm value of -2
+  DIR* dir = opendir(dirname);
+  if (dir){
+    confirmVal = -2;
+  }
+  else{ //if directory doesn't exist, attempt to create it
+    sprintf(command, "mkdir %s", dirname);
+    if (system(command) == 0){
+      confirmVal = 1; //send confirm value of 1 if successful
+    }
+    else{
+      confirmVal = -1;//send confirm value of -1 if unsuccessful
+    }
+  }
+  confirmVal = ntohl(confirmVal);
+  errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
+}
+
+void serverRMD(int sock){
+  unsigned short int dirNameLen;
+  int status;
+  char command[50];
+  int confirmVal;
+  char clientConfirm[1000];
+
+  //Receive the two-byte length of the dirname
+  status = recv(sock,(char*) &dirNameLen, 2, 0);
+  if (status < 0) {
+    perror("myftpd: recv dirname length");
+    close(sock);
+    exit(3);
+  }
+
+  dirNameLen = ntohs(dirNameLen);
+  //DEBUG PRINT
+  printf("The directory name length is %d\n", dirNameLen);
+
+  char dirname[dirNameLen];
+  //Receive the name of the directory:
+  status = recv(sock, dirname, dirNameLen, 0);
+  if (status < 0) {
+    perror("myftpd: recv dirname");
+    close(sock);
+    exit(3);
+  }
+  printf("Receieved %d bytes\n", status);
+  printf("The name of the directory is %s\n", dirname);
+
+  //if the directory exists, send confirm value of 1
+  DIR* dir = opendir(dirname);
+  if (dir){
+    confirmVal = 1;
+  }
+  else{
+    confirmVal = -1; //otherwise sent confirm value of -1
+  }
+  confirmVal = ntohl(confirmVal);
+  errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
+
+  //receive confirmation of RMD from client
+  errorCheckRecv(sock, &clientConfirm, sizeof(clientConfirm), "myftpd");
+
+  if(strcmp("Yes",clientConfirm)==0){ //if RMD confirmed, delete directory
+    sprintf(command, "rmdir %s", dirname);
+    if (system(command) == 0){
+      confirmVal = 1; //send back 1 if deletion successful
+    }
+    else{
+      confirmVal = -1;//otherwise send back -1
+    }
+    confirmVal = ntohl(confirmVal);
+    errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
+  }
+  else if(strcmp("No",clientConfirm)==0){ //if RMD cancelled, go back to wait for operation state
+    return;
+  }
+}
+
+void serverCHD(int sock){
+  unsigned short int dirNameLen;
+  int status;
+  char command[50];
+  int confirmVal;
+
+  //Receive the two-byte length of the dirname
+  status = recv(sock,(char*) &dirNameLen, 2, 0);
+  if (status < 0) {
+    perror("myftpd: recv dirname length");
+    close(sock);
+    exit(3);
+  }
+
+  dirNameLen = ntohs(dirNameLen);
+  //DEBUG PRINT
+  printf("The directory name length is %d\n", dirNameLen);
+
+  char dirname[dirNameLen];
+  //Receive the name of the directory:
+  status = recv(sock, dirname, dirNameLen, 0);
+  if (status < 0) {
+    perror("myftpd: recv dirname");
+    close(sock);
+    exit(3);
+  }
+  printf("Receieved %d bytes\n", status);
+  printf("The name of the directory is %s\n", dirname);
+
+  //if the directory exists, send confirm value of 1
+  DIR* dir = opendir(dirname);
+  if (dir){
+    sprintf(command, "cd %s", dirname);
+    if (system(command) == 0){
+      confirmVal = 1; //send confirm value of 1 if successful
+    }
+    else{
+      confirmVal = -1;//send confirm value of -1 if unsuccessful
+    }
+  }
+  else{
+    confirmVal = -2; //if directory doesn't exist, send confirm value of -2
+  }
+  confirmVal = ntohl(confirmVal);
+  errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
+}
 
 int main(int argc, char * argv[]){
   struct sockaddr_in sin;
@@ -246,34 +488,29 @@ int main(int argc, char * argv[]){
       else if(strcmp("UPL",buf)==0){
         serverUpload(new_s);
       }
-      else if(strcmp("DEL",buf)==0){
-        strcpy(message,"You sent DEL! w00t!\n");
-      }
       else if(strcmp("LIS",buf)==0){
-        strcpy(message,"You sent LIS! Booyah!\n");
+        serverList(new_s);
+      }
+      else if(strcmp("DEL",buf)==0){
+        serverDelete(new_s);
       }
       else if(strcmp("MKD",buf)==0){
-        strcpy(message,"You sent MKD! Way to go man!\n");
+        serverMKD(new_s);
       }
       else if(strcmp("RMD",buf)==0){
-        strcpy(message,"You sent RMD! What a play!\n");
+        serverRMD(new_s);
       }
       else if(strcmp("CHD",buf)==0){
-        strcpy(message,"You sent CHD! Boomshakalaka!\n");
+        serverCHD(new_s);
       }
       else if(strcmp("XIT",buf)==0){
         close(new_s);
         break;
       }
       else{
-        strcpy(message,"Send a correct command dumbass\n");
+        strcpy(message,"Send a correct command\n");
       }
       printf("TCP Server Received:%s\n",buf);
-      /*
-      if((sent=send(new_s,message,strlen(message),0))==-1){
-        perror("Server Send Error!");
-        exit(1);
-	} */
     }
     printf("Client Quit!\n");
     close(new_s);
