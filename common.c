@@ -193,8 +193,6 @@ void sendFile(int sock, FILE* file, unsigned int fileSize,
             exit(5);
         }
     }
-    //DEBUG PRINT
-    puts("Finished sending the file!");
 }
 
 
