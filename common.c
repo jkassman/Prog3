@@ -9,7 +9,7 @@
 
 #include "common.h"
 
-//The following sends and receives just make the code cleaner.
+//The following errorCheck sends and receives just make the code cleaner.
 //They all exit the *entire program* on an error and print out an error message.
 //Also, they're void * so you don't have to cast (char*) anymore.
 
