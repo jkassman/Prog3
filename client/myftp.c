@@ -107,6 +107,7 @@ int clientRequest(int sock)
     return 0;
 }
 
+//returns 1 if invalid filename exists.
 int clientUpload(int sock)
 {
     char fileName[100];
@@ -119,9 +120,6 @@ int clientUpload(int sock)
     //int hashMash;
     char throughputMess[100];
 
-    //Send Op Code to server:
-    errorCheckStrSend(sock, "UPL", PROG3_SEND_OP_ERR);
-
     //Getting the file name from the user:
     printf("Please enter the name of the file you would like to upload: ");
     fgets(fileName, 100, stdin);
@@ -131,18 +129,19 @@ int clientUpload(int sock)
     //Checking to see if the file exists:
     if (access(fileName, F_OK) < 0) {
       //if file does not exist...
-       printf("here ;w; \n");
        perror("myftp()");
        return 1;
     } else { 
        fileToSend = fopen(fileName, "r");
       if (!fileToSend) {
-        printf("in can't send...\n");
         perror("myftp() ");
         close(sock);
         exit(6);
        }
     }
+
+    //Send Op Code to server:
+    errorCheckStrSend(sock, "UPL", PROG3_SEND_OP_ERR);
     
     fileSize = getFileSize(fileToSend);
     fileSizeToSend = htonl(getFileSize(fileToSend));
