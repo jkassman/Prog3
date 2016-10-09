@@ -13,6 +13,7 @@
 int clientRequest(int sock)
 {
     errorCheckStrSend(sock, "REQ", PROG3_SEND_OP_ERR);
+
     //Receive query from the server
     char recvQuery[PROG3_BUFF_SIZE];
     unsigned short int fileNameLen;
@@ -22,6 +23,9 @@ int clientRequest(int sock)
     unsigned char recvdHash[16];
     unsigned int fileLenBuffy;
     int bytesRecvd;
+    struct timeval tvalBefore, tvalAfter;
+    double transferTime, throughput;
+
     bytesRecvd = errorCheckRecv(sock, recvQuery, sizeof(recvQuery), 
                                 "myftp: query recv()");
 
@@ -62,7 +66,7 @@ int clientRequest(int sock)
     int j;
     printf("Hash value: \n");
     for( j = 0; j < 16; j++) {
-      printf("%02x.", hash[j]);
+      printf("%02x", hash[j]);
     }
     printf("\n");
 
@@ -72,7 +76,9 @@ int clientRequest(int sock)
      printf("Error opening file \n");
      return 0;
     }
+    gettimeofday(&tvalBefore, NULL);
     recvFile(sock, f, fileLenBuffy, "myftp");
+    gettimeofday(&tvalAfter, NULL);
 
     //Computes the MD5 hash of recieved file: 
     fclose(f);
@@ -83,13 +89,18 @@ int clientRequest(int sock)
     int k;
     printf("New File Hash Value: ");
     for(k = 0; k < 16; k++) {
-      printf("%02x.", recvdHash[k]);
+      printf("%02x", recvdHash[k]);
     }
     printf("\n");
+
+    //Calculate throughput of request process:
+    transferTime = (tvalAfter.tv_sec - tvalBefore.tv_sec) + 1e-6*(tvalAfter.tv_usec - tvalBefore.tv_usec);
+    throughput = ((fileLenBuffy/transferTime)/1e6);
 
     //Compares the two hashes:
     if(!hashCompare(hash, recvdHash)) {
       printf("The hashes match!\n");
+      printf("%d bytes transfered in %lf seconds: %lf Megabytes/sec \n", fileLenBuffy, transferTime, throughput);
     }else{
       printf("The hashes do not match...\n");
     }
@@ -106,6 +117,8 @@ int clientUpload(int sock)
     FILE *fileToSend;
     unsigned int fileSizeToSend;
     short int fileNameSize;
+    //int hashMash;
+    char throughputMess[100];
 
     //Send Op Code to server:
     errorCheckStrSend(sock, "UPL", PROG3_SEND_OP_ERR);
@@ -169,9 +182,24 @@ int clientUpload(int sock)
     printf("\n");
 
    // errorCheckStrSend(sock, (char*)hash, "myftp:");
-    errorCheckSend(sock, &hash, 16, "myftp: ");
-   printf("SSSSSSSSSSSSSSEEEEEEEEEEEEEEEEEEEENNNNNNNNNNNNNNNNNNNNNNNNNNNDDDDDDDDDDDDDDD\n");
-    //return to "prompt user for operation" state:
+   errorCheckSend(sock, &hash, 16, "myftp: ");
+
+   //Check to see if the hashes match:
+   /* errorCheckRecv(sock, &hashMash, 2, "myftp: ");
+   if(hashMash == -1) {
+     printf("The hashes do not match! \n");
+     return 0;
+   }else{
+     printf("The hashes matched! \n"); */
+
+     errorCheckRecv(sock, &throughputMess, 100, "myftp: ");
+     //throughput = ((fileSize/transferTime)/1e6);
+     //transferTime = (fileSize/(throughput*1e6));
+     
+     printf("%s\n", throughputMess);
+  // }
+     
+   //return to "prompt user for operation" state:
  
     return 0;
 }
