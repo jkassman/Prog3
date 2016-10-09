@@ -465,14 +465,27 @@ int main(int argc, char * argv[]){
   struct sockaddr_in sin;
   char buf[PROG3_BUFF_SIZE];
   char message[PROG3_BUFF_SIZE];
-  char *portString;
   socklen_t len;
-  int s, new_s, port; // sent;
+  int s, new_s, port;
 
   //check for correct number of arguments and assign arguments to variables
   if (argc==2){
-    portString=argv[1];
-    port = atoi(portString);
+      int convertStatus = stringToInt(&port, argv[1], 0, INT_MAX);
+      switch (convertStatus) {
+      case 1:
+          fprintf(stderr, "Error: Negative port value.\n");
+          exit(1);
+      case 2:
+          fprintf(stderr, "Error: Port value out of integer range!\n");
+          exit(1);
+      case 3:
+          fprintf(stderr, "Error: Unrecognized characters in port (%s)\n",
+                  argv[1]);
+          exit(1);
+      default:
+          //Do nothing, successfully parsed the port
+          break;
+      }
   }
   else{
     fprintf(stderr, "usage: myftpd [Port]\n");
