@@ -9,7 +9,7 @@
 
 #include "common.h"
 
-//The following sends and receives just make the code cleaner.
+//The following errorCheck sends and receives just make the code cleaner.
 //They all exit the *entire program* on an error and print out an error message.
 //Also, they're void * so you don't have to cast (char*) anymore.
 
@@ -181,8 +181,7 @@ void sendFile(int sock, FILE* file, unsigned int fileSize,
         }
         bytesRead += bytesThisTime;
 
-        //DEBUG PRINT
-        printf("Read in %d bytes this time. bytesRead is %d and fileSize is %d\n", (int) bytesThisTime, (int) bytesRead, fileSize);
+        //printf("Read in %d bytes this time. bytesRead is %d and fileSize is %d\n", (int) bytesThisTime, (int) bytesRead, fileSize);
 
         //Send out the bytes read in this iteration to the client
         status = send(sock, sendFileBuffer, bytesThisTime, 0);
@@ -194,8 +193,6 @@ void sendFile(int sock, FILE* file, unsigned int fileSize,
             exit(5);
         }
     }
-    //DEBUG PRINT
-    puts("Finished sending the file!");
 }
 
 
