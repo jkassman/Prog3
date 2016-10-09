@@ -29,8 +29,8 @@ void serverRequest(int sock) {
   }
 
   fileNameLen = ntohs(fileNameLen);
-  //DEBUG PRINT
-  printf("The file name length is %d\n", fileNameLen);
+
+  //printf("The file name length is %d\n", fileNameLen);
 
   char filename[fileNameLen];
   //Receive the name of the file:
@@ -40,17 +40,18 @@ void serverRequest(int sock) {
     close(sock);
     exit(3);
   }
-  printf("Receieved %d bytes\n", status);
-  printf("The name of the file is %s\n", filename);
+ //printf("Receieved %d bytes\n", status);
+ //printf("The name of the file is %s\n", filename);
 
+ //Check to see if the file exists on the server
   unsigned int fileSize;
   FILE *fileToSend;
   if (access(filename, F_OK) < 0) {
-    //not a file, send -1;
+    //if it does not exist, send -1 to client
     fileSize = -1;
     fileSize = htonl(fileSize);
   } else {
-    //is a file, discover then send its size
+    //if it does exist, try to open it. Then send size if successful
     fileToSend = fopen(filename, "r");
     if (!fileToSend) {
       perror("myftpd: fopen()");
@@ -59,7 +60,7 @@ void serverRequest(int sock) {
     }
     fileSize = getFileSize(fileToSend);
   }  
-  //send the 4 byte integer
+  //send the 32-bit file size
   status = send(sock, (char*) &fileSize, 4, 0);
   if (status < 0) {
     perror("myftpd: send file size");
@@ -74,13 +75,12 @@ void serverRequest(int sock) {
   unsigned char hash[16];
   hashFile(hash, fileToSend);
   
-  //DEBUG PRINT
-  printf("The hash is: ");
+  /*printf("The hash is: ");
   int i;
   for (i = 0; i < 16; i++) {
     printf("%02x.", hash[i]);
   }
-  puts("");
+  puts(""); */
   
   //Send the hash
   status = send(sock, hash, 16, 0);
@@ -514,7 +514,7 @@ int main(int argc, char * argv[]){
     exit(1);
   }
   printf("Hello, and Welcome to the Server of the 21st Century!\n");
-  /*wait for connection, then receive and print text */
+  /*wait for connection */
   while(1){
     if((new_s = accept(s,(struct sockaddr *)&sin,&len))<0){
       perror("myftpd:accept");
@@ -551,10 +551,10 @@ int main(int argc, char * argv[]){
         close(new_s);
         break;
       }
-      else{
+      /*else{
         strcpy(message,"Send a correct command\n");
-      }
-      printf("TCP Server Received:%s\n",buf);
+      } */
+      printf("TCP Server Received:%s\n",buf); 
     }
     printf("Client Quit!\n");
     close(new_s);

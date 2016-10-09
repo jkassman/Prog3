@@ -52,7 +52,7 @@ int clientRequest(int sock)
     errorCheckRecv(sock, &fileLenBuffy, 4,
                    "myftp: recv() 32-bit file length");
 
-    printf("File length: %i \n", fileLenBuffy);
+   // printf("File length: %i \n", fileLenBuffy);
 
     //Decode 32-bit value:
     if(fileLenBuffy == -1) {
@@ -62,13 +62,6 @@ int clientRequest(int sock)
 
     //Receives MD5 Hash:
     errorCheckRecv(sock, hash, 16, "myftp: recv() MD5 hash");
-  
-    int j;
-    printf("Hash value: \n");
-    for( j = 0; j < 16; j++) {
-      printf("%02x", hash[j]);
-    }
-    printf("\n");
 
     //Receieve a file from the server:
     FILE *f = fopen(fileName, "w");
@@ -86,12 +79,12 @@ int clientRequest(int sock)
     hashFile(recvdHash, f);
     fclose(f);
    
-    int k;
+    /*int k;
     printf("New File Hash Value: ");
     for(k = 0; k < 16; k++) {
       printf("%02x", recvdHash[k]);
     }
-    printf("\n");
+    printf("\n"); */
 
     //Calculate throughput of request process:
     transferTime = (tvalAfter.tv_sec - tvalBefore.tv_sec) + 1e-6*(tvalAfter.tv_usec - tvalBefore.tv_usec);
@@ -101,8 +94,14 @@ int clientRequest(int sock)
     if(!hashCompare(hash, recvdHash)) {
       printf("The hashes match!\n");
       printf("%d bytes transfered in %lf seconds: %lf Megabytes/sec \n", fileLenBuffy, transferTime, throughput);
+      int j;
+      printf("File MD5sum: \n");
+      for( j = 0; j < 16; j++) {
+        printf("%02x", hash[j]);
+      }
+      printf("\n"); 
     }else{
-      printf("The hashes do not match...\n");
+      printf("The hashes do not match.\n");
     }
 
     return 0;
@@ -548,7 +547,7 @@ int main(int argc, char **argv)
     //Get input from user
     char operation[16];
     int loopExit = 0;
-    printf("\nWelcome to THE super awesome Project 3: Client Side Edition! :D \n");
+    printf("\nWelcome to the TCP Client. \n");
     while (!loopExit)
     {
         printf("\nWhat would you like to do? Type in the 3 letter code of your choice.\n \n");
