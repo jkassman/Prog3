@@ -102,7 +102,12 @@ void serverUpload(int sock) {
   unsigned char recvdHash[16];
   unsigned int fileLenBuffy;
   int status;
-  int fileLenRecvd, hashRecvd; // fileRecvd;
+  int fileLenRecvd, hashRecvd;
+  double transferTime;
+  double throughput;
+  struct timezone tz;
+  struct timeval ts1;
+  struct timeval ts2;
 
   //Receive the two-byte length of the filename
   status = recv(sock,(char*) &fileNameLen, 2, 0);
@@ -153,6 +158,9 @@ void serverUpload(int sock) {
     return;
   }
 
+  //get the time when beginning to receive file
+  gettimeofday(&ts1,&tz);
+
   //Receieve a file from the client:
   FILE *f = fopen(filename, "w");
   if(!f){
@@ -160,6 +168,9 @@ void serverUpload(int sock) {
    return;
   }
   recvFile(sock, f, fileLenBuffy, "myftpd");
+
+  //get the time after receiving file
+  gettimeofday(&ts2,&tz);
 
   //Computes the MD5 hash of recieved file: 
   fclose(f);
@@ -175,6 +186,10 @@ void serverUpload(int sock) {
       close(sock);
       exit(3);
   }
+
+  //compute throughput
+  transferTime = (ts2.tv_sec - ts1.tv_sec) + 1e-6*(ts2.tv_usec - ts1.tv_usec);
+  throughput = ((fileLenBuffy/transferTime)/1e6);
   
   int j;
   printf("Hash value: \n");
@@ -185,7 +200,7 @@ void serverUpload(int sock) {
 
   //Compares the two hashes:
   if(!hashCompare(hash, recvdHash)) {
-    printf("The hashes match!\n");
+    printf("%i bytes transferred in %f seconds: %f Megabytes/sec\n", fileLenBuffy,transferTime,throughput);
   }else{
     printf("The hashes do not match. Transfer Unsuccessful.\n");
   }
