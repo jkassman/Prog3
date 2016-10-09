@@ -153,15 +153,11 @@ void serverUpload(int sock) {
   }
   recvFile(sock, f, fileLenBuffy, "myftpd");
 
-  printf("About to compute hash\n");
-
   //Computes the MD5 hash of recieved file: 
   fclose(f);
   f = fopen(filename, "r");
   hashFile(recvdHash, f);
   fclose(f);
-
-  printf("Computed hash\n");
 
   //Receives MD5 Hash:
   hashRecvd = recv(sock, hash, 16, 0);
@@ -171,7 +167,6 @@ void serverUpload(int sock) {
       close(sock);
       exit(3);
   }
-  printf("Received Hash\n");
   
   int j;
   printf("Hash value: \n");
@@ -184,7 +179,7 @@ void serverUpload(int sock) {
   if(!hashCompare(hash, recvdHash)) {
     printf("The hashes match!\n");
   }else{
-    printf("The hashes do not match...\n");
+    printf("The hashes do not match. Transfer Unsuccessful.\n");
   }
   return;
 }
@@ -195,10 +190,10 @@ void serverList(int sock){
   int sizeToSend;
 
   //create a temp file that contains the directory listing
-  strcpy(command, "ls > tempList.txt");
+  strcpy(command, "ls > ./.tempList.txt");
   system(command);
 
-  FILE *f = fopen("tempList.txt","r");
+  FILE *f = fopen("./.tempList.txt","r");
 
   //get the filesize
   fileSize = getFileSize(f);
@@ -211,7 +206,7 @@ void serverList(int sock){
   sendFile(sock, f, fileSize, "myftpd");
 
   //remove the temp file
-  strcpy(command, "rm tempList.txt");
+  strcpy(command, "rm ./.tempList.txt");
   system(command);
 
 }
@@ -257,6 +252,10 @@ void serverDelete(int sock){
   confirmVal = ntohl(confirmVal);
   errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
 
+  if (confirmVal == -1){
+    return;
+  }
+
   //receive confirmation of DEL from client
   errorCheckRecv(sock, &clientConfirm, sizeof(clientConfirm), "myftpd");
 
@@ -268,7 +267,7 @@ void serverDelete(int sock){
     else{
       confirmVal = -1;//otherwise send back -1
     }
-    confirmVal = ntohl(confirmVal);
+    confirmVal = htonl(confirmVal);
     errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
   }
   else if(strcmp("No",clientConfirm)==0){ //if DEL cancelled, go back to wait for operation state
@@ -364,6 +363,10 @@ void serverRMD(int sock){
   confirmVal = ntohl(confirmVal);
   errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
 
+  if (confirmVal == -1){
+    return;
+  }
+
   //receive confirmation of RMD from client
   errorCheckRecv(sock, &clientConfirm, sizeof(clientConfirm), "myftpd");
 
@@ -386,7 +389,7 @@ void serverRMD(int sock){
 void serverCHD(int sock){
   unsigned short int dirNameLen;
   int status;
-  char command[50];
+  //char command[50];
   int confirmVal;
 
   //Receive the two-byte length of the dirname
@@ -415,8 +418,8 @@ void serverCHD(int sock){
   //if the directory exists, send confirm value of 1
   DIR* dir = opendir(dirname);
   if (dir){
-    sprintf(command, "cd %s", dirname);
-    if (system(command) == 0){
+    //sprintf(command, "cd %s", dirname);
+    if (chdir(dirname) == 0){
       confirmVal = 1; //send confirm value of 1 if successful
     }
     else{
@@ -426,7 +429,7 @@ void serverCHD(int sock){
   else{
     confirmVal = -2; //if directory doesn't exist, send confirm value of -2
   }
-  confirmVal = ntohl(confirmVal);
+  confirmVal = htonl(confirmVal);
   errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
 }
 
