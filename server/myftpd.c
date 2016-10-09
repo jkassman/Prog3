@@ -100,6 +100,8 @@ void serverUpload(int sock) {
   unsigned short int fileNameLen;
   unsigned char hash[16];
   unsigned char recvdHash[16];
+  char throughputMessage[100];
+  char failedMessage[100];
   unsigned int fileLenBuffy;
   int status;
   int fileLenRecvd, hashRecvd;
@@ -182,7 +184,7 @@ void serverUpload(int sock) {
   hashRecvd = recv(sock, hash, 16, 0);
   if(hashRecvd < 0) 
   {
-     fprintf(stderr, "myftp Error: recv() MD5 hash: %s\n", strerror(errno));
+     fprintf(stderr, "myftpd Error: recv() MD5 hash: %s\n", strerror(errno));
       close(sock);
       exit(3);
   }
@@ -200,9 +202,12 @@ void serverUpload(int sock) {
 
   //Compares the two hashes:
   if(!hashCompare(hash, recvdHash)) {
-    printf("%i bytes transferred in %f seconds: %f Megabytes/sec\n", fileLenBuffy,transferTime,throughput);
+    sprintf(throughputMessage, "%u bytes transferred in %f seconds: %f Megabytes/sec\n", fileLenBuffy,transferTime,throughput);
+    printf("Throughput Message is:%s\n",throughputMessage);
+    errorCheckSend(sock, throughputMessage, strlen(throughputMessage), "myftpd");
   }else{
-    printf("The hashes do not match. Transfer Unsuccessful.\n");
+    sprintf(failedMessage, "Transfer Unsuccessful");
+    errorCheckSend(sock, failedMessage, strlen(failedMessage), "myftpd");
   }
   return;
 }
