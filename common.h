@@ -19,6 +19,7 @@
 #include <netdb.h>
 #include <mhash.h>
 #include <dirent.h>
+#include <sys/time.h>
 
 #define PROG3_BUFF_SIZE 4096
 
