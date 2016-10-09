@@ -154,12 +154,6 @@ void serverUpload(int sock) {
   fileLenBuffy = ntohl(fileLenBuffy);
   printf("File length: %i \n", fileLenBuffy);
 
-  //Decode 32-bit value:
-  if(fileLenBuffy == -1) {
-    printf("File does not exist on server.\n");
-    return;
-  }
-
   //get the time when beginning to receive file
   gettimeofday(&ts1,&tz);
 
@@ -167,7 +161,7 @@ void serverUpload(int sock) {
   FILE *f = fopen(filename, "w");
   if(!f){
    printf("Error opening file \n");
-   return;
+   exit(242);
   }
   recvFile(sock, f, fileLenBuffy, "myftpd");
 
