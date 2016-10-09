@@ -1,3 +1,11 @@
+/*
+  Authors: Jacob Kassman, Lauren Kuta, Matt Paulson
+  netIDs: jkassman, lkuta, mpaulson
+  Computer Networks: Programming Assignment 3
+  common.h
+  Defines several functions used frequently throughout both our server and client code.  
+ */
+
 #ifndef PROG3_COMMON_H
 #define PROG3_COMMON_H
 

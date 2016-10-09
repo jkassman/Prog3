@@ -1,3 +1,12 @@
+
+/*
+  Authors: Jacob Kassman, Lauren Kuta, Matt Paulson
+  netIDs: jkassman, lkuta, mpaulson
+  Computer Networks: Programming Assignment 3
+  common.c
+  Defines several functions used frequently throughout both our server and client code.  
+ */
+
 #include "common.h"
 
 //The following sends and receives just make the code cleaner.

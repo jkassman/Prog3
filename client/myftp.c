@@ -1,22 +1,12 @@
 /*
   Authors: Jacob Kassman, Lauren Kuta, Matt Paulson
   netIDs: jkassman, lkuta, mpaulson
+  Computer Networks: Programming Assignment 3
+  myftp.c
+  Creates a client and allows the client to execute a variety of functions.  
  */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <limits.h>
-#include <netdb.h>
 #include "../common.h"
-
-#define PROG3_BUFFER_SIZE 4096
 
 #define PROG3_SEND_OP_ERR "myftp: send opcode"
 
@@ -24,7 +14,7 @@ int clientRequest(int sock)
 {
     errorCheckStrSend(sock, "REQ", PROG3_SEND_OP_ERR);
     //Receive query from the server
-    char recvQuery[PROG3_BUFFER_SIZE];
+    char recvQuery[PROG3_BUFF_SIZE];
     unsigned short int fileNameLen;
     unsigned short int fileNameLenToSend;
     char fileName[1000];
@@ -304,7 +294,7 @@ int clientMkdir(int sock)
 
 int clientRmdir(int sock)
 {
-    startClientDir(sock, "RMD", 
+    startClientDir(sock, "RMD",
                    "Please enter the name of the directory to remove:\n");
 
     int dirStatus;
@@ -312,34 +302,54 @@ int clientRmdir(int sock)
     errorCheckRecv(sock, &dirStatus, 4, 
                    "myftp: RMD: recv() dirStatus");
     dirStatus = ntohl(dirStatus);
+    //DEBUG PRINT
+    printf("dirStatus is %d\n", dirStatus);
     if (dirStatus > 0)
     {
         printf("Are you sure you want to delete the directory? (Yes/No): ");
-        char answer[8];
-        strcpy(answer, "dumb");
+        char answer[16];
         int wrong = 0;
-        while (strcmp(answer, "yes") && strcmp(answer, "no"))
+        do 
         {
-            fgets(answer, 5, stdin);
+            if (wrong)
+            {
+                printf("Please enter either Yes or No: ");
+            }
+            fgets(answer, 12, stdin);
+            answer[strlen(answer)-1] = '\0'; //chop off the newline
             int i;
             for (i = 0; i < strlen(answer); i++)
             {
                 answer[i] = tolower(answer[i]);
             }
-            if (wrong)
-            {
-                printf("Please enter either Yes or No: ");
-            }
             wrong = 1;
-        }
+        } while (strcmp(answer, "yes") && strcmp(answer, "no"));
         if (!strcmp(answer, "no"))
         {
             errorCheckStrSend(sock, "No", "myftp: RMD: send() No");
+            puts("Delete abandoned by the user!");
         }
         if (!strcmp(answer, "yes"))
         {
             errorCheckStrSend(sock, "Yes", "myftp: RMD: send() Yes");
-        }
+            //check if successfuly deleted:
+            int deleteStatus;
+            errorCheckRecv(sock, &deleteStatus, 4, 
+                           "myftp: RMD: recv() delete status");
+            deleteStatus = ntohl(deleteStatus);
+            if (deleteStatus > 0)
+            {
+                puts("Directory Deleted.");
+            }
+            else
+            {
+                puts("Failed to delete directory.");
+            }
+        }      
+    }
+    else
+    { 
+        puts("The directory does not exist on server.");
     }
     return 0;
 }
@@ -347,6 +357,48 @@ int clientRmdir(int sock)
 int clientCd(int sock)
 {
     errorCheckStrSend(sock, "CHD", PROG3_SEND_OP_ERR);
+
+    char changeDir[100];
+    short int cdNameSize;
+
+    //Get the name of the directory to change to:
+    printf("Please list the name of the directory that you would like to change to: ");
+    fgets(changeDir, 100, stdin);
+    printf("File Name: %s", changeDir);
+    changeDir[(strlen(changeDir)-1)] = '\0';
+
+    //Send the length of the directory name and the directory name:
+    cdNameSize = htons(strlen(changeDir)+1);
+    
+    errorCheckSend(sock, &cdNameSize, 2, "myftp: ");
+    errorCheckStrSend(sock, changeDir, "myftp: ");
+   
+    //Receive and process confirm from server:
+    int dirStatus;
+    errorCheckRecv(sock, &dirStatus, 4, "myftp: MKD: recv() directory status");
+    dirStatus = ntohl(dirStatus);
+
+    //print out status of directory make
+    switch (dirStatus) {
+      case -2:
+        puts("The directory does not exist on this server.");
+        return 0;
+        break;
+
+      case -1:
+        puts("Error in changing directory.");
+        return 0;
+        break;
+
+      case 1:
+        puts("Changed current directory.");
+        return 0;
+        break;
+  
+      default:
+        fprintf(stderr, "Wait, it shouldn't be possible to get here.\n");
+    }
+  
     return 0;
 }
 
@@ -427,8 +479,19 @@ int main(int argc, char **argv)
     //Get input from user
     char operation[16];
     int loopExit = 0;
+    printf("\nWelcome to THE super awesome Project 3: Client Side Edition! :D \n");
     while (!loopExit)
     {
+        printf("\nWhat would you like to do? Type in the 3 letter code of your choice.\n \n");
+        printf("REQ: Request a file to download from the server.\n");
+        printf("UPL: Upload a file to the server.\n");
+        printf("DEL: Delete a file from the server.\n");
+        printf("LIS: List all files and directories at your current position.\n");
+        printf("MKD: Make a directory on the server.\n");
+        printf("RMD: Remove a directory from the server.\n");
+        printf("CHD: Change your current directory on the server.\n");
+        printf("XIT: Exit the program.\n");
+
         fgets(operation, 16, stdin);
         //Decide which operation to do
         if (!strcmp(operation, "REQ\n"))

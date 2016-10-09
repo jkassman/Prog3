@@ -1,4 +1,12 @@
-//This is a server
+
+/*
+  Authors: Jacob Kassman, Lauren Kuta, Matt Paulson
+  netIDs: jkassman, lkuta, mpaulson
+  Computer Networks: Programming Assignment 3
+  myftpd.c
+  Creates a TCP server able to receive several commands from a client.
+ */
+
 #include "../common.h"
 
 void serverRequest(int sock) {
