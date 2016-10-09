@@ -176,12 +176,6 @@ int clientUpload(int sock)
     return 0;
 }
 
-int clientDelete(int sock)
-{
-    errorCheckStrSend(sock, "DEL", PROG3_SEND_OP_ERR);
-    return 0;
-}
-
 int clientList(int sock)
 {
     //send opcode
@@ -226,6 +220,7 @@ int clientList(int sock)
     return 0;
 }
 
+/* The beginning of RMD, DEL, and MKD is the same, so it is encapsulated here */
 //Operation is the code (e.g. MKD)
 //userMessage is how to prompt the user.
 void startClientDir(int sock, char *operation, char *userMessage)
@@ -251,22 +246,6 @@ void startClientDir(int sock, char *operation, char *userMessage)
 
 int clientMkdir(int sock)
 {
-/*    errorCheckStrSend(sock, "MKD", PROG3_SEND_OP_ERR);
-    unsigned short int dirNameLen;
-    unsigned short int dirNameLenToSend;
-    char dirname[1000];
-    //Grab user input
-    puts("Please enter the name of the directory to make:");
-    dirNameLen = getNameFromUser(dirname, 1000);
-    
-    //send the file name length
-    dirNameLenToSend = htons(dirNameLen);
-    errorCheckSend(sock, &dirNameLenToSend, 2, 
-                   "myftp: MKD: send() file name length");
-
-    //send the file name:
-    errorCheckStrSend(sock, dirname, "myftp: MKD: send() filename");
-*/
     startClientDir(sock, "MKD", "Please enter the name of the directory to make:\n");
     //get status of directory make
     int dirStatus;
@@ -306,7 +285,7 @@ int clientRmdir(int sock)
     printf("dirStatus is %d\n", dirStatus);
     if (dirStatus > 0)
     {
-        printf("Are you sure you want to delete the directory? (Yes/No): ");
+        printf("Are you sure you want to remove the directory? (Yes/No): ");
         char answer[16];
         int wrong = 0;
         do 
@@ -350,6 +329,68 @@ int clientRmdir(int sock)
     else
     { 
         puts("The directory does not exist on server.");
+    }
+    return 0;
+}
+
+int clientDelete(int sock)
+{
+    startClientDir(sock, "DEL",
+                   "Please enter the name of the file to delete:\n");
+
+    int fileStatus;
+    //receive file status from server. (Whether or not it exists)
+    errorCheckRecv(sock, &fileStatus, 4, 
+                   "myftp: DEL: recv() fileStatus");
+    fileStatus = ntohl(fileStatus);
+    //DEBUG PRINT
+    printf("fileStatus is %d\n", fileStatus);
+    if (fileStatus > 0)
+    {
+        printf("Are you sure you want to delete the file? (Yes/No): ");
+        char answer[16];
+        int wrong = 0;
+        do 
+        {
+            if (wrong)
+            {
+                printf("Please enter either Yes or No: ");
+            }
+            fgets(answer, 12, stdin);
+            answer[strlen(answer)-1] = '\0'; //chop off the newline
+            int i;
+            for (i = 0; i < strlen(answer); i++)
+            {
+                answer[i] = tolower(answer[i]);
+            }
+            wrong = 1;
+        } while (strcmp(answer, "yes") && strcmp(answer, "no"));
+        if (!strcmp(answer, "no"))
+        {
+            errorCheckStrSend(sock, "No", "myftp: DEL: send() No");
+            puts("Delete abandoned by the user!");
+        }
+        else if (!strcmp(answer, "yes"))
+        {
+            errorCheckStrSend(sock, "Yes", "myftp: DEL: send() Yes");
+            //check if successfuly deleted:
+            int deleteStatus;
+            errorCheckRecv(sock, &deleteStatus, 4, 
+                           "myftp: DEL: recv() delete status");
+            deleteStatus = ntohl(deleteStatus);
+            if (deleteStatus > 0)
+            {
+                puts("File Deleted.");
+            }
+            else
+            {
+                puts("Failed to delete the file.");
+            }
+        }      
+    }
+    else
+    { 
+        puts("The file does not exist on server.");
     }
     return 0;
 }

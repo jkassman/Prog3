@@ -181,8 +181,7 @@ void sendFile(int sock, FILE* file, unsigned int fileSize,
         }
         bytesRead += bytesThisTime;
 
-        //DEBUG PRINT
-        printf("Read in %d bytes this time. bytesRead is %d and fileSize is %d\n", (int) bytesThisTime, (int) bytesRead, fileSize);
+        //printf("Read in %d bytes this time. bytesRead is %d and fileSize is %d\n", (int) bytesThisTime, (int) bytesRead, fileSize);
 
         //Send out the bytes read in this iteration to the client
         status = send(sock, sendFileBuffer, bytesThisTime, 0);
