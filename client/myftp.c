@@ -1,6 +1,9 @@
 /*
   Authors: Jacob Kassman, Lauren Kuta, Matt Paulson
   netIDs: jkassman, lkuta, mpaulson
+  Computer Networks: Programming Assignment 3
+  myftp.c
+  Creates a client and allows the client to execute a variety of functions.  
  */
 
 #include "../common.h"
@@ -354,6 +357,48 @@ int clientRmdir(int sock)
 int clientCd(int sock)
 {
     errorCheckStrSend(sock, "CHD", PROG3_SEND_OP_ERR);
+
+    char changeDir[100];
+    short int cdNameSize;
+
+    //Get the name of the directory to change to:
+    printf("Please list the name of the directory that you would like to change to: ");
+    fgets(changeDir, 100, stdin);
+    printf("File Name: %s", changeDir);
+    changeDir[(strlen(changeDir)-1)] = '\0';
+
+    //Send the length of the directory name and the directory name:
+    cdNameSize = htons(strlen(changeDir)+1);
+    
+    errorCheckSend(sock, &cdNameSize, 2, "myftp: ");
+    errorCheckStrSend(sock, changeDir, "myftp: ");
+   
+    //Receive and process confirm from server:
+    int dirStatus;
+    errorCheckRecv(sock, &dirStatus, 4, "myftp: MKD: recv() directory status");
+    dirStatus = ntohl(dirStatus);
+
+    //print out status of directory make
+    switch (dirStatus) {
+      case -2:
+        puts("The directory does not exist on this server.");
+        return 0;
+        break;
+
+      case -1:
+        puts("Error in changing directory.");
+        return 0;
+        break;
+
+      case 1:
+        puts("Changed current directory.");
+        return 0;
+        break;
+  
+      default:
+        fprintf(stderr, "Wait, it shouldn't be possible to get here.\n");
+    }
+  
     return 0;
 }
 
@@ -434,8 +479,19 @@ int main(int argc, char **argv)
     //Get input from user
     char operation[16];
     int loopExit = 0;
+    printf("\nWelcome to THE super awesome Project 3: Client Side Edition! :D \n");
     while (!loopExit)
     {
+        printf("\nWhat would you like to do? Type in the 3 letter code of your choice.\n \n");
+        printf("REQ: Request a file to download from the server.\n");
+        printf("UPL: Upload a file to the server.\n");
+        printf("DEL: Delete a file from the server.\n");
+        printf("LIS: List all files and directories at your current position.\n");
+        printf("MKD: Make a directory on the server.\n");
+        printf("RMD: Remove a directory from the server.\n");
+        printf("CHD: Change your current directory on the server.\n");
+        printf("XIT: Exit the program.\n");
+
         fgets(operation, 16, stdin);
         //Decide which operation to do
         if (!strcmp(operation, "REQ\n"))
