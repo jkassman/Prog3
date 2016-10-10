@@ -248,7 +248,7 @@ void serverDelete(int sock){
 
   fileNameLen = ntohs(fileNameLen);
   //DEBUG PRINT
-  printf("The file name length is %d\n", fileNameLen);
+  //printf("The file name length is %d\n", fileNameLen);
 
   char filename[fileNameLen];
   //Receive the name of the file:
@@ -265,11 +265,11 @@ void serverDelete(int sock){
   FILE* f = fopen(filename, "r");
   if (f){
     confirmVal = 1;
+    fclose(f);
   }
   else{
     confirmVal = -1; //otherwise sent confirm value of -1
   }
-  fclose(f);
   confirmVal = ntohl(confirmVal);
   errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
 
@@ -327,6 +327,7 @@ void serverMKD(int sock){
   DIR* dir = opendir(dirname);
   if (dir){
     confirmVal = -2;
+    closedir(dir);
   }
   else{ //if directory doesn't exist, attempt to create it
     sprintf(command, "mkdir %s", dirname);
@@ -337,7 +338,6 @@ void serverMKD(int sock){
       confirmVal = -1;//send confirm value of -1 if unsuccessful
     }
   }
-  closedir(dir);
 
   confirmVal = ntohl(confirmVal);
   errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
@@ -374,12 +374,12 @@ void serverRMD(int sock){
   //if the directory exists, send confirm value of 1
   DIR* dir = opendir(dirname);
   if (dir){
+    closedir(dir);
     confirmVal = 1;
   }
   else{
     confirmVal = -1; //otherwise sent confirm value of -1
   }
-  closedir(dir);
   confirmVal = ntohl(confirmVal);
   errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
 
@@ -435,6 +435,7 @@ void serverCHD(int sock){
   //if the directory exists, send confirm value of 1
   DIR* dir = opendir(dirname);
   if (dir){
+    closedir(dir);
     //sprintf(command, "cd %s", dirname);
     if (chdir(dirname) == 0){
       confirmVal = 1; //send confirm value of 1 if successful
@@ -446,7 +447,6 @@ void serverCHD(int sock){
   else{
     confirmVal = -2; //if directory doesn't exist, send confirm value of -2
   }
-  closedir(dir);
   confirmVal = htonl(confirmVal);
   errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
 }
