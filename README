@@ -1,0 +1,27 @@
+Names: Jacob Kassman, Lauren Kuta, Matt Paulson
+netids: jkassman, lkuta, mpaulson
+Date: 10-10-2016
+
+common.h, common.c:
+	library that contains functions that both client and server use.
+
+server/Makefile: 
+	type "make" to compile code. "make clean" removes executables.
+server/myftpd.c: 
+	The C source code of the server.
+	The server will process REQ, UPL, DEL, LIS, MKD, RMD, CHD, and XIT
+		commands.
+	The server never prints anything to the screen, except in case of error 
+	example: ./myftp 41030
+
+
+client/Makefile: 
+	type "make" to compile code. "make clean" removes executables.
+client/myftp.c: 
+	The C source code for the client
+	The client will initiate REQ, UPL, DEL, LIS, MKD, RMD, CHD, and XIT
+		commands.
+	The client displays information to the user when appropriate.
+	example: ./myftp student01.cse.nd.edu 41030
+
+
