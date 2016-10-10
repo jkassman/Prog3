@@ -171,6 +171,14 @@ int clientUpload(int sock)
 
     hashFile(hash, fileToSend);
     fclose(fileToSend);
+
+    //print out the calcualted checksum
+    int j;
+    printf("File MD5sum: ");
+    for( j = 0; j < 16; j++) {
+        printf("%02x", hash[j]);
+    }
+    printf("\n"); 
   
     errorCheckSend(sock, &hash, 16, "myftp: ");
     errorCheckRecv(sock, &throughputMess, 100, "myftp: ");

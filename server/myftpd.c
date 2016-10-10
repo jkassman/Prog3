@@ -196,7 +196,7 @@ void serverUpload(int sock) {
 
   //Compares the two hashes:
   if(!hashCompare(hash, recvdHash)) {
-    sprintf(throughputMessage, "%u bytes transferred in %f seconds: %f Megabytes/sec\n", fileLenBuffy,transferTime,throughput);
+    sprintf(throughputMessage, "%u bytes transferred in %f seconds: %f Megabytes/sec", fileLenBuffy,transferTime,throughput);
     //printf("Throughput Message is:%s\n",throughputMessage);
     errorCheckSend(sock, throughputMessage, strlen(throughputMessage)+1, "myftpd");
   }else{
