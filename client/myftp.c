@@ -123,7 +123,7 @@ int clientUpload(int sock)
     //Getting the file name from the user:
     printf("Please enter the name of the file you would like to upload: ");
     fgets(fileName, 100, stdin);
-    printf("File Name: %s \n", fileName);
+    //printf("File Name: %s \n", fileName);
     fileName[(strlen(fileName)-1)] = '\0';
 
     //Checking to see if the file exists:
@@ -154,10 +154,10 @@ int clientUpload(int sock)
     errorCheckSend(sock, &fileNameSize, 2, "myftp: sending length of file name");
     errorCheckStrSend(sock, fileName, "myftp: sending file name");
 
-    //Receives acknowledgement from the server:
+    //Receives acknowledgement that the server is ready to receive the file:
 
     errorCheckRecv(sock, firstAck, sizeof(firstAck), "myftp: receiving first ack");
-    printf("%s \n", firstAck);
+    //printf("%s\n", firstAck);
 
     //Sends over the file size (32-bit value):
 

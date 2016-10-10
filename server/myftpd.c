@@ -135,7 +135,7 @@ void serverUpload(int sock) {
   //printf("The name of the file is %s\n", filename);
 
   char *ackMessage = "Acknowledge Received Filename: Ready to Receive File";
-  status = send(sock,ackMessage,strlen(ackMessage),0);
+  status = send(sock,ackMessage,strlen(ackMessage) + 1,0);
   if (status < 0) {
     perror("myftpd: send() req query");
     close(sock);
@@ -198,10 +198,10 @@ void serverUpload(int sock) {
   if(!hashCompare(hash, recvdHash)) {
     sprintf(throughputMessage, "%u bytes transferred in %f seconds: %f Megabytes/sec\n", fileLenBuffy,transferTime,throughput);
     //printf("Throughput Message is:%s\n",throughputMessage);
-    errorCheckSend(sock, throughputMessage, strlen(throughputMessage), "myftpd");
+    errorCheckSend(sock, throughputMessage, strlen(throughputMessage)+1, "myftpd");
   }else{
     sprintf(failedMessage, "Transfer Unsuccessful");
-    errorCheckSend(sock, failedMessage, strlen(failedMessage), "myftpd");
+    errorCheckSend(sock, failedMessage, strlen(failedMessage)+1, "myftpd");
   }
   return;
 }
