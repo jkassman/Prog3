@@ -12,7 +12,7 @@
 void serverRequest(int sock) {
   char *queryMessage = "Please enter the name of the file to receive:";
   int status;
-  status = send(sock,queryMessage,strlen(queryMessage),0);
+  status = send(sock,queryMessage,strlen(queryMessage)+1,0);
   if (status < 0) {
     perror("myftpd: send() req query");
     close(sock);
