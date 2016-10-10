@@ -145,9 +145,9 @@ int clientUpload(int sock)
     
     fileSize = getFileSize(fileToSend);
     fileSizeToSend = htonl(getFileSize(fileToSend));
-    printf("File Size: %i \n", fileSize);
+    //printf("File Size: %i \n", fileSize);
     fileNameSize = htons(strlen(fileName)+1);
-    printf("FileNameSize: %i \n", fileNameSize);
+    //printf("FileNameSize: %i \n", fileNameSize);
    
     //Sending over the length of the file name followed by the file name:
     
@@ -171,31 +171,10 @@ int clientUpload(int sock)
 
     hashFile(hash, fileToSend);
     fclose(fileToSend);
-
-    int k;
-    printf("File's Hash Value: ");
-    for(k = 0; k < 16; k++) {
-      printf("%02x.", hash[k]);
-    }
-    printf("\n");
-
-   // errorCheckStrSend(sock, (char*)hash, "myftp:");
-   errorCheckSend(sock, &hash, 16, "myftp: ");
-
-   //Check to see if the hashes match:
-   /* errorCheckRecv(sock, &hashMash, 2, "myftp: ");
-   if(hashMash == -1) {
-     printf("The hashes do not match! \n");
-     return 0;
-   }else{
-     printf("The hashes matched! \n"); */
-
-     errorCheckRecv(sock, &throughputMess, 100, "myftp: ");
-     //throughput = ((fileSize/transferTime)/1e6);
-     //transferTime = (fileSize/(throughput*1e6));
-     
-     printf("%s\n", throughputMess);
-  // }
+  
+    errorCheckSend(sock, &hash, 16, "myftp: ");
+    errorCheckRecv(sock, &throughputMess, 100, "myftp: ");
+    printf("%s\n", throughputMess);
      
    //return to "prompt user for operation" state:
  

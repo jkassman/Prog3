@@ -10,7 +10,7 @@
 #include "../common.h"
 
 void serverRequest(int sock) {
-  char *queryMessage = "Please enter the name of the file to receive";
+  char *queryMessage = "Please enter the name of the file to receive:";
   int status;
   status = send(sock,queryMessage,strlen(queryMessage),0);
   if (status < 0) {
@@ -120,8 +120,8 @@ void serverUpload(int sock) {
   }
 
   fileNameLen = ntohs(fileNameLen);
-  //DEBUG PRINT
-  printf("The file name length is %d\n", fileNameLen);
+  
+  //printf("The file name length is %d\n", fileNameLen);
 
   char filename[fileNameLen];
   //Receive the name of the file:
@@ -131,8 +131,8 @@ void serverUpload(int sock) {
     close(sock);
     exit(3);
   }
-  printf("Receieved %d bytes\n", status);
-  printf("The name of the file is %s\n", filename);
+  //printf("Receieved %d bytes\n", status);
+  //printf("The name of the file is %s\n", filename);
 
   char *ackMessage = "Acknowledge Received Filename: Ready to Receive File";
   status = send(sock,ackMessage,strlen(ackMessage),0);
@@ -152,7 +152,7 @@ void serverUpload(int sock) {
   }
 
   fileLenBuffy = ntohl(fileLenBuffy);
-  printf("File length: %i \n", fileLenBuffy);
+  //printf("File length: %i \n", fileLenBuffy);
 
   //get the time when beginning to receive file
   gettimeofday(&ts1,&tz);
@@ -187,17 +187,17 @@ void serverUpload(int sock) {
   transferTime = (ts2.tv_sec - ts1.tv_sec) + 1e-6*(ts2.tv_usec - ts1.tv_usec);
   throughput = ((fileLenBuffy/transferTime)/1e6);
   
-  int j;
+  /*int j;
   printf("Hash value: \n");
   for( j = 0; j < 16; j++) {
     printf("%02x.", hash[j]);
   }
-  printf("\n");
+  printf("\n"); */
 
   //Compares the two hashes:
   if(!hashCompare(hash, recvdHash)) {
     sprintf(throughputMessage, "%u bytes transferred in %f seconds: %f Megabytes/sec\n", fileLenBuffy,transferTime,throughput);
-    printf("Throughput Message is:%s\n",throughputMessage);
+    //printf("Throughput Message is:%s\n",throughputMessage);
     errorCheckSend(sock, throughputMessage, strlen(throughputMessage), "myftpd");
   }else{
     sprintf(failedMessage, "Transfer Unsuccessful");
