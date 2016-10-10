@@ -193,7 +193,7 @@ int clientList(int sock)
     
     //Make a temporary file:
     char filename[32];
-    strcpy(filename, "/tmp/prog3LIS_XXXXXX");
+    strcpy(filename, "./.prog3LIS_XXXXXX");
     int tempFd = mkstemp(filename);
     FILE* tempF = fdopen(tempFd, "w");
     
@@ -286,10 +286,9 @@ int clientRmdir(int sock)
     errorCheckRecv(sock, &dirStatus, 4, 
                    "myftp: RMD: recv() dirStatus");
     dirStatus = ntohl(dirStatus);
-    //DEBUG PRINT
-    printf("dirStatus is %d\n", dirStatus);
     if (dirStatus > 0)
     {
+        /* Get user "yes" or "no" (case insensitive) */
         printf("Are you sure you want to remove the directory? (Yes/No): ");
         char answer[16];
         int wrong = 0;
@@ -301,6 +300,7 @@ int clientRmdir(int sock)
             }
             fgets(answer, 12, stdin);
             answer[strlen(answer)-1] = '\0'; //chop off the newline
+            //convert answer to lowercase
             int i;
             for (i = 0; i < strlen(answer); i++)
             {
@@ -313,7 +313,7 @@ int clientRmdir(int sock)
             errorCheckStrSend(sock, "No", "myftp: RMD: send() No");
             puts("Delete abandoned by the user!");
         }
-        if (!strcmp(answer, "yes"))
+        else if (!strcmp(answer, "yes"))
         {
             errorCheckStrSend(sock, "Yes", "myftp: RMD: send() Yes");
             //check if successfuly deleted:
@@ -348,10 +348,9 @@ int clientDelete(int sock)
     errorCheckRecv(sock, &fileStatus, 4, 
                    "myftp: DEL: recv() fileStatus");
     fileStatus = ntohl(fileStatus);
-    //DEBUG PRINT
-    printf("fileStatus is %d\n", fileStatus);
     if (fileStatus > 0)
     {
+        /* Grab user information ("yes" or "no" case insensitive) */
         printf("Are you sure you want to delete the file? (Yes/No): ");
         char answer[16];
         int wrong = 0;
@@ -363,6 +362,7 @@ int clientDelete(int sock)
             }
             fgets(answer, 12, stdin);
             answer[strlen(answer)-1] = '\0'; //chop off the newline
+            //convert answer to lowercase
             int i;
             for (i = 0; i < strlen(answer); i++)
             {
@@ -380,7 +380,7 @@ int clientDelete(int sock)
             errorCheckStrSend(sock, "Yes", "myftp: DEL: send() Yes");
             //check if successfuly deleted:
             int deleteStatus;
-            errorCheckRecv(sock, &deleteStatus, 4, 
+            errorCheckRecv(sock, &deleteStatus, 4,
                            "myftp: DEL: recv() delete status");
             deleteStatus = ntohl(deleteStatus);
             if (deleteStatus > 0)
@@ -410,7 +410,7 @@ int clientCd(int sock)
     //Get the name of the directory to change to:
     printf("Please list the name of the directory that you would like to change to: ");
     fgets(changeDir, 100, stdin);
-    printf("File Name: %s", changeDir);
+    //printf("File Name: %s", changeDir);
     changeDir[(strlen(changeDir)-1)] = '\0';
 
     //Send the length of the directory name and the directory name:
@@ -451,7 +451,7 @@ int clientCd(int sock)
 void clientExit(int sock)
 {
     errorCheckStrSend(sock, "XIT", PROG3_SEND_OP_ERR);
-    printf("The session has been closed\n");
+    printf("The session has been closed!\n");
 }
  
 int main(int argc, char **argv)

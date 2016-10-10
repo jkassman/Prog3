@@ -207,13 +207,11 @@ void serverUpload(int sock) {
 }
 
 void serverList(int sock){
-  char command[50];
   int fileSize;
   int sizeToSend;
 
   //create a temp file that contains the directory listing
-  strcpy(command, "ls > ./.tempList.txt");
-  system(command);
+  system("ls > ./.tempList.txt");
 
   FILE *f = fopen("./.tempList.txt","r");
 
@@ -227,10 +225,10 @@ void serverList(int sock){
   //send the file
   sendFile(sock, f, fileSize, "myftpd");
 
-  //remove the temp file
-  strcpy(command, "rm ./.tempList.txt");
-  system(command);
+  fclose(f);
 
+  //remove the temp file
+  system("rm ./.tempList.txt");
 }
 
 void serverDelete(int sock){
@@ -260,17 +258,18 @@ void serverDelete(int sock){
     close(sock);
     exit(3);
   }
-  printf("Receieved %d bytes\n", status);
-  printf("The name of the file is %s\n", filename);
+  //printf("Receieved %d bytes\n", status);
+  //printf("The name of the file is %s\n", filename);
 
   //if the file exists, send confirm value of 1
-  FILE* f = fopen(filename, "w");
+  FILE* f = fopen(filename, "r");
   if (f){
     confirmVal = 1;
   }
   else{
     confirmVal = -1; //otherwise sent confirm value of -1
   }
+  fclose(f);
   confirmVal = ntohl(confirmVal);
   errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
 
@@ -312,8 +311,6 @@ void serverMKD(int sock){
   }
 
   dirNameLen = ntohs(dirNameLen);
-  //DEBUG PRINT
-  printf("The directory name length is %d\n", dirNameLen);
 
   char dirname[dirNameLen];
   //Receive the name of the directory:
@@ -323,8 +320,8 @@ void serverMKD(int sock){
     close(sock);
     exit(3);
   }
-  printf("Receieved %d bytes\n", status);
-  printf("The name of the directory is %s\n", dirname);
+  //printf("Receieved %d bytes\n", status);
+  //printf("The name of the directory is %s\n", dirname);
 
   //if the directory exists, send confirm value of -2
   DIR* dir = opendir(dirname);
@@ -340,6 +337,8 @@ void serverMKD(int sock){
       confirmVal = -1;//send confirm value of -1 if unsuccessful
     }
   }
+  closedir(dir);
+
   confirmVal = ntohl(confirmVal);
   errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
 }
@@ -360,9 +359,7 @@ void serverRMD(int sock){
   }
 
   dirNameLen = ntohs(dirNameLen);
-  //DEBUG PRINT
-  printf("The directory name length is %d\n", dirNameLen);
-
+  
   char dirname[dirNameLen];
   //Receive the name of the directory:
   status = recv(sock, dirname, dirNameLen, 0);
@@ -371,8 +368,8 @@ void serverRMD(int sock){
     close(sock);
     exit(3);
   }
-  printf("Receieved %d bytes\n", status);
-  printf("The name of the directory is %s\n", dirname);
+  //printf("Receieved %d bytes\n", status);
+  //printf("The name of the directory is %s\n", dirname);
 
   //if the directory exists, send confirm value of 1
   DIR* dir = opendir(dirname);
@@ -382,6 +379,7 @@ void serverRMD(int sock){
   else{
     confirmVal = -1; //otherwise sent confirm value of -1
   }
+  closedir(dir);
   confirmVal = ntohl(confirmVal);
   errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
 
@@ -411,7 +409,6 @@ void serverRMD(int sock){
 void serverCHD(int sock){
   unsigned short int dirNameLen;
   int status;
-  //char command[50];
   int confirmVal;
 
   //Receive the two-byte length of the dirname
@@ -423,8 +420,6 @@ void serverCHD(int sock){
   }
 
   dirNameLen = ntohs(dirNameLen);
-  //DEBUG PRINT
-  printf("The directory name length is %d\n", dirNameLen);
 
   char dirname[dirNameLen];
   //Receive the name of the directory:
@@ -434,8 +429,8 @@ void serverCHD(int sock){
     close(sock);
     exit(3);
   }
-  printf("Receieved %d bytes\n", status);
-  printf("The name of the directory is %s\n", dirname);
+  //printf("Receieved %d bytes\n", status);
+  //printf("The name of the directory is %s\n", dirname);
 
   //if the directory exists, send confirm value of 1
   DIR* dir = opendir(dirname);
@@ -451,6 +446,7 @@ void serverCHD(int sock){
   else{
     confirmVal = -2; //if directory doesn't exist, send confirm value of -2
   }
+  closedir(dir);
   confirmVal = htonl(confirmVal);
   errorCheckSend(sock, &confirmVal, sizeof(int), "myftpd");
 }
@@ -458,7 +454,6 @@ void serverCHD(int sock){
 int main(int argc, char * argv[]){
   struct sockaddr_in sin;
   char buf[PROG3_BUFF_SIZE];
-  char message[PROG3_BUFF_SIZE];
   socklen_t len;
   int s, new_s, port;
 
@@ -507,7 +502,7 @@ int main(int argc, char * argv[]){
     perror("myftpd:listen");
     exit(1);
   }
-  printf("Hello, and Welcome to the Server of the 21st Century!\n");
+  //printf("Hello, and Welcome to the Server of the 21st Century!\n");
   /*wait for connection */
   while(1){
     if((new_s = accept(s,(struct sockaddr *)&sin,&len))<0){
