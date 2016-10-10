@@ -543,9 +543,9 @@ int main(int argc, char * argv[]){
       /*else{
         strcpy(message,"Send a correct command\n");
       } */
-      printf("TCP Server Received:%s\n",buf); 
+      //printf("TCP Server Received:%s\n",buf); 
     }
-    printf("Client Quit!\n");
+    //printf("Client Quit!\n");
     close(new_s);
   }
   close(s);

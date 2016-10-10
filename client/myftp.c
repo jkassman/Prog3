@@ -92,16 +92,16 @@ int clientRequest(int sock)
 
     //Compares the two hashes:
     if(!hashCompare(hash, recvdHash)) {
-      printf("The hashes match!\n");
+      //printf("The hashes match!\n");
       printf("%d bytes transfered in %lf seconds: %lf Megabytes/sec \n", fileLenBuffy, transferTime, throughput);
       int j;
-      printf("File MD5sum: \n");
+      printf("File MD5sum: ");
       for( j = 0; j < 16; j++) {
         printf("%02x", hash[j]);
       }
       printf("\n"); 
     }else{
-      printf("The hashes do not match.\n");
+      printf("File transfer unsuccessful: The hashes do not match.\n");
     }
 
     return 0;
